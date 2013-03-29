@@ -32,10 +32,17 @@ newer than or equal to Racket 5.3.3.7 should work. Nightly-build
 installers for Racket can be downloaded
 [here](http://pre.racket-lang.org/installers/).
 
-Once you have Racket installed, run `make link` (or the equivalent
-command from the makefile) from the root directory of the Git checkout
-to install the package in your Racket system. This will make `#lang
-marketplace` available to programs.
+Once you have Racket installed, run
+
+    raco pkg install --link `pwd`
+
+from the root directory of the Git checkout to install the package in
+your Racket system. (Alternatively, `make link` does the same thing.)
+This will make `#lang marketplace` available to programs.
+
+It will take several minutes to compile the code. On my Macbook Air,
+it takes around 10 minutes; on my ridiculously fast desktop machine,
+it still takes around 2 minutes.
 
 At this point, you may load and run any of the example `*.rkt` files
 in the
