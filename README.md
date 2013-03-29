@@ -12,7 +12,7 @@ single
    [`marketplace/`](https://github.com/tonyg/marketplace/tree/master/marketplace/).
 
  - the echo server example from the paper, in
-   [`marketplace/examples/echo-paper3.rkt`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/echo-paper3.rkt).
+   [`marketplace/examples/echo-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/echo-paper.rkt).
 
  - the chat server example from the paper, in
    [`marketplace/examples/chat-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/chat-paper.rkt).
