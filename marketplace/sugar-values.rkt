@@ -83,3 +83,5 @@
 	      (loop new-state
 		    (cons actions more-actions)
 		    remaining-items)]))])))
+
+;;; eval: (put 'sequence-actions 'scheme-indent-function 1)
