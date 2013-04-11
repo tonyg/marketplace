@@ -20,10 +20,10 @@
 (define-syntax-rule (send-to-user* debug-name pid (e) failure-result enclosed-expr)
   (with-handlers ([exn:fail? (lambda: ([e : Reason])
 			       (if (exn? e)
-				   (log-error "Process ~v(~v):~n~a~n" debug-name pid
-					      (exn-message e))
-				   (log-error "Process ~v(~v):~n~v~n" debug-name pid
-					      e))
+				   (matrix-log 'error "Process ~v(~v):~n~a~n"
+					       debug-name pid (exn-message e))
+				   (matrix-log 'error "Process ~v(~v):~n~v~n"
+					       debug-name pid e))
 			       failure-result)])
     (matrix-log 'debug "Entering process ~v(~v)" debug-name pid)
     (define result enclosed-expr)
