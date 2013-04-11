@@ -27,24 +27,23 @@
   (: co-quit : Reason -> CoTransition)
   (define ((co-quit e) k)
     ((inst k False) (transition #f (quit #f e))))
-  (: transition-accepter : (All (NewState) (Transition NewState) ->
-				(List (process OldState) vm)))
+  (: transition-accepter : (All (NewState) (Transition NewState) -> Process))
   (define (transition-accepter t)
-    (match t
-      [(transition initial-state initial-actions)
-       ;;(matrix-log 'info "PID ~v (~a) started" new-pid debug-name)
-       (list (if parent-k
-		 (run-ready p (send-to-user p (e) (quit-interruptk e)
-				(parent-k new-pid)))
-		 p)
-	     (inject-process (struct-copy vm state [next-process-id (+ new-pid 1)])
-			     (mkProcess ((inst process NewState)
-					 debug-name
-					 new-pid
-					 initial-state
-					 '()
-					 #hash()
-					 #hash()
-					 (action-tree->quasiqueue initial-actions)))))]))
-  (apply values ((inst new-cotransition (List (process OldState) vm))
-		 transition-accepter)))
+    (match-define (transition initial-state initial-actions) t)
+    (mkProcess ((inst process NewState)
+		debug-name
+		new-pid
+		initial-state
+		'()
+		#hash()
+		#hash()
+		(action-tree->quasiqueue initial-actions))))
+  (let ((new-process
+	 (send-to-user* debug-name new-pid (e) (transition-accepter (transition #f (quit #f e)))
+	   ((inst new-cotransition Process) transition-accepter))))
+    (values (if parent-k
+		(run-ready p (send-to-user p (e) (quit-interruptk e)
+			       (parent-k new-pid)))
+		p)
+	    (inject-process (struct-copy vm state [next-process-id (+ new-pid 1)])
+			    new-process))))
