@@ -2,6 +2,7 @@
 
 (require racket/match)
 (require "types.rkt")
+(require "log-typed.rkt")
 (require/typed "unify.rkt"
 	       [wild (case-> (-> Topic) (Symbol -> Topic))]
 	       [mgu-canonical (Topic Topic -> Topic)]
@@ -46,8 +47,11 @@
 ;; "Both left and right must be canonicalized." - comment from os2.rkt. What does it mean?
 (: role-intersection : Role Role -> (Option Topic))
 (define (role-intersection left right)
-  (and (orientations-intersect? (role-orientation left) (role-orientation right))
-       (mgu-canonical (freshen (role-topic left)) (freshen (role-topic right)))))
+  (define result
+    (and (orientations-intersect? (role-orientation left) (role-orientation right))
+	 (mgu-canonical (freshen (role-topic left)) (freshen (role-topic right)))))
+  (matrix-log 'debug "role-intersection ~v // ~v --> ~v" left right result)
+  result)
 
 ;; True iff the flow between remote-role and local-role should be
 ;; visible to the local peer. This is the case when either local-role

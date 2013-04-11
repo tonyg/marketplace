@@ -4,6 +4,7 @@
 (require "types.rkt")
 (require "roles.rkt")
 (require "vm.rkt")
+(require "log-typed.rkt")
 (require (rename-in "tr-struct-copy.rkt" [tr-struct-copy struct-copy])) ;; PR13149 workaround
 
 (provide send-to-user
@@ -24,7 +25,10 @@
 				   (log-error "Process ~v(~v):~n~v~n" debug-name pid
 					      e))
 			       failure-result)])
-    enclosed-expr))
+    (matrix-log 'debug "Entering process ~v(~v)" debug-name pid)
+    (define result enclosed-expr)
+    (matrix-log 'debug "Leaving  process ~v(~v)" debug-name pid)
+    result))
 
 (: action-tree->quasiqueue : (All (State) (ActionTree State) -> (QuasiQueue (Action State))))
 (define (action-tree->quasiqueue t)
