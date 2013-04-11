@@ -62,7 +62,31 @@
 	       [pending-actions (quasiqueue-append (process-pending-actions p)
 						   (action-tree->quasiqueue actions))]))
 
-(: notify-route-change-process : (All (SOld SNew Event)
+(: notify-route-change-self : (All (SNew)
+				   (process SNew)
+				   (endpoint SNew)
+				   (Role -> EndpointEvent)
+				   ->
+				   (process SNew)))
+(define (notify-route-change-self pn en flow->notification)
+  (define endpointso (process-endpoints pn))
+  (for/fold ([pn pn]) ([eido (in-hash-keys endpointso)])
+    (define eo (hash-ref endpointso eido))
+    (cond
+     [(role-intersection (endpoint-role eo) (endpoint-role en))
+      => (lambda (intersecting-topic)
+	   (define flow-toward-o (refine-role (endpoint-role en) intersecting-topic))
+	   (define flow-toward-n (refine-role (endpoint-role eo) intersecting-topic))
+	   (invoke-handler-if-visible (invoke-handler-if-visible pn
+								 eo
+								 flow-toward-o
+								 flow->notification)
+				      en
+				      flow-toward-n
+				      flow->notification))]
+     [else pn])))
+
+(: notify-route-change-process : (All (SOld SNew)
 				      (process SOld)
 				      (process SNew)
 				      (endpoint SNew)
@@ -110,7 +134,7 @@
   (define-values (final-pn new-processes)
     (for/fold: : (values (process SNew)
 			 (HashTable PID Process))
-        ([pn pn]
+        ([pn (notify-route-change-self pn en flow->notification)]
 	 [new-processes (ann #hash() (HashTable PID Process))])
 	([pid (in-hash-keys old-processes)])
       (define wp (hash-ref old-processes pid))
