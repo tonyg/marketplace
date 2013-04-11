@@ -34,6 +34,6 @@
 	  (lambda ()
 	    (let loop ()
 	      (match (sync receiver)
-		[(vector level message data)
+		[(vector level message data event-name)
 		 (fprintf (current-error-port) "~a/~a\n" (level-code level) message)])
 	      (loop)))))])
