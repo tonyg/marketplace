@@ -8,7 +8,13 @@
 (require "../process.rkt")
 (require "../quasiqueue.rkt")
 
+(require/typed "gui.rkt"
+	       [opaque AnyState any-state?]
+	       [open-debugger (Any -> (Values (AnyState -> Void) (-> Void)))])
+
 (provide debug)
+
+(struct: debugger ([out : (AnyState -> Void)] [in : (-> Void)]))
 
 (: debug : (All (ParentState) (Spawn ParentState) -> (Spawn ParentState)))
 (define (debug spawn-child)
@@ -21,18 +27,25 @@
       (define (wrapped-cotransition k)
 	(: receiver : (All (S) (Transition S) -> R))
 	(define (receiver child-transition)
-	  ((inst k S) (wrap-transition debug-name child-transition)))
+	  (define-values (send-to-debugger! receive-from-debugger!)
+	    (open-debugger debug-name))
+	  (define d (debugger send-to-debugger! receive-from-debugger!))
+	  ((inst k S) (wrap-transition d child-transition)))
 	((inst original-cotransition R) receiver))
       wrapped-cotransition))
    parent-k
    (list 'debug debug-name)))
 
-(: wrap-transition : (All (ChildState) Any (Transition ChildState) -> (Transition ChildState)))
-(define (wrap-transition debug-name child-transition)
+(: wrap-transition : (All (ChildState)
+			  debugger
+			  (Transition ChildState)
+			  -> (Transition ChildState)))
+(define (wrap-transition d child-transition)
+  ((debugger-out d) (cast child-transition AnyState))
+  ((debugger-in d))
   (match-define (core:transition child-state child-actions) child-transition)
-  (log-debug "~v: New State ~v" debug-name child-state)
   (core:transition child-state ((inst action-tree-map ChildState)
-				(wrap-action debug-name)
+				(wrap-action d)
 				child-actions)))
 
 (: action-tree-map : (All (State) ((Action State) -> (Action State))
@@ -43,53 +56,58 @@
    f
    (quasiqueue->list (action-tree->quasiqueue actions))))
 
-(: wrap-action : (All (ChildState) Any -> ((Action ChildState) -> (Action ChildState))))
-(define ((wrap-action debug-name) action)
+(: wrap-action : (All (ChildState)
+		      debugger
+		      -> ((Action ChildState) -> (Action ChildState))))
+(define ((wrap-action d) action)
   (cond
    [(core:yield? action)
-    (log-debug "~v: Yield" debug-name)
-    (core:yield (wrap-interruptk debug-name (core:yield-k action)))]
+    (core:yield (wrap-interruptk d (core:yield-k action)))]
    [(core:at-meta-level? action)
-    (core:at-meta-level (wrap-preaction "Outer" debug-name (core:at-meta-level-preaction action)))]
+    (core:at-meta-level (wrap-preaction #t d (core:at-meta-level-preaction action)))]
    [else
-    (wrap-preaction "Inner" debug-name action)]))
+    (wrap-preaction #f d action)]))
 
-(: wrap-preaction : (All (ChildState) String Any (PreAction ChildState) -> (PreAction ChildState)))
-(define (wrap-preaction level debug-name preaction)
+(: wrap-preaction : (All (ChildState)
+			 Boolean
+			 debugger
+			 (PreAction ChildState)
+			 -> (PreAction ChildState)))
+(define (wrap-preaction meta? d preaction)
   (match preaction
     [(core:add-endpoint pre-eid role handler)
-     (log-debug "~v: ~a AddEndpoint ~v ~v" debug-name level pre-eid role)
-     (core:add-endpoint pre-eid role (wrap-handler debug-name handler))]
+     (core:add-endpoint pre-eid role (wrap-handler meta? d handler))]
     [(core:delete-endpoint pre-eid reason)
-     (log-debug "~v: ~a DeleteEndpoint ~v ~v" debug-name level pre-eid reason)
      preaction]
     [(core:send-message body orientation)
-     (log-debug "~v: ~a SendMessage ~v ~v" debug-name level body orientation)
      preaction]
     [(core:spawn spec maybe-k child-debug-name)
-     (log-debug "~v: ~a Spawn ~v" debug-name level child-debug-name)
-     (core:spawn spec (wrap-spawnk debug-name maybe-k) child-debug-name)]
+     (core:spawn spec (wrap-spawnk d maybe-k) child-debug-name)]
     [(core:quit pid reason)
-     (log-debug "~v: ~a Quit ~v ~v" debug-name level pid reason)
      preaction]))
 
-(: wrap-interruptk : (All (ChildState) Any (InterruptK ChildState) -> (InterruptK ChildState)))
-(define (wrap-interruptk debug-name ik)
+(: wrap-interruptk : (All (ChildState)
+			  debugger
+			  (InterruptK ChildState)
+			  -> (InterruptK ChildState)))
+(define (wrap-interruptk d ik)
   (lambda (state)
-    (log-debug "~v: Old State ~v" debug-name state)
-    (wrap-transition debug-name (ik state))))
+    (wrap-transition d (ik state))))
 
 (: wrap-spawnk : (All (ChildState)
-		      Any
+		      debugger
 		      (Option (PID -> (InterruptK ChildState)))
 		      -> (Option (PID -> (InterruptK ChildState)))))
-(define (wrap-spawnk debug-name maybe-k)
+(define (wrap-spawnk d maybe-k)
   (and maybe-k
-       (lambda: ([child-pid : PID]) (wrap-interruptk debug-name (maybe-k child-pid)))))
+       (lambda: ([child-pid : PID]) (wrap-interruptk d (maybe-k child-pid)))))
 
-(: wrap-handler : (All (ChildState) Any (Handler ChildState) -> (Handler ChildState)))
-(define (wrap-handler debug-name h)
+(: wrap-handler : (All (ChildState)
+		       Boolean
+		       debugger
+		       (Handler ChildState)
+		       -> (Handler ChildState)))
+(define (wrap-handler meta? d h)
   (lambda (event)
-    (log-debug "~v: Incoming Event ~v" debug-name event)
-    (wrap-interruptk debug-name (h event))))
-
+    ((debugger-out d) (cast (cons meta? event) AnyState))
+    (wrap-interruptk d (h event))))
