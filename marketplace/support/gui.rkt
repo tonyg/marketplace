@@ -43,6 +43,8 @@
 ;;   Trace display
 ;;     Selection of a row rewinds to that point
 
+(struct historical-moment (alive? state endpoints) #:transparent)
+
 (define (any-state? x) #t)
 
 (define (open-debugger name)
@@ -67,6 +69,10 @@
     (define stepping? #t)
     (define waiting? #f)
 
+    (define current-historical-moment (historical-moment #t (void) '()))
+    (define displayed-endpoints '())
+    (define booted? #f)
+
     (define frame (new frame%
 		       [label (format "~a" name)]
 		       [width 480]
@@ -89,19 +95,26 @@
 			   [label #f]
 			   [choices '()]
 			   [parent frame]
-			   [columns '("ID" "Orientation" "Topic" "Type")]))
+			   [columns '("ID" "" "" "" "Topic")]))
 
     (define events (new list-box%
 			[style '(single column-headers)]
+			[callback (lambda (lb e)
+				    (define sel (or (send lb get-selection)
+						    (- (send lb get-number) 1)))
+				    (define m (and sel (send lb get-data sel)))
+				    (when m (select-historical-moment m)))]
 			[label #f]
 			[choices '()]
 			[parent frame]
 			[columns '("Time" "Dir" "Type" "Detail")]))
 
-    (send endpoints set-column-width 1 32 32 32)
-    (send endpoints set-column-width 3 32 32 32)
+    (define FIXED-COLUMN-WIDTH 40)
+    (send endpoints set-column-width 1 FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH)
+    (send endpoints set-column-width 2 FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH)
+    (send endpoints set-column-width 3 FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH)
 
-    (send events set-column-width 1 32 32 32)
+    (send events set-column-width 1 FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH)
 
     (define (toolbar-button label [handler void])
       (new button%
@@ -159,11 +172,59 @@
     ;; (toolbar-spacer)
     ;; (toolbar-button (stop-sign-icon))
 
+    (define status-indicator
+      (new canvas%
+	   [parent toolbar]
+	   [min-width 32]
+	   [min-height 32]
+	   [stretchable-width #f]
+	   [style '(transparent no-focus)]
+	   [paint-callback (lambda (c dc)
+			     (define mx (/ (send c get-width) 2))
+			     (define my (/ (send c get-height) 2))
+			     (define r (/ (min mx my) 2))
+			     (send dc set-brush
+				   (if (historical-moment-alive? current-historical-moment)
+				       "green"
+				       "red")
+				   'solid)
+			     (send dc draw-ellipse (- mx r) (- my r) (* r 2) (* r 2)))]))
+
     (define state-text (new text%))
     (define state-canvas (new editor-canvas%
 			      [parent state-panel]
 			      [editor state-text]
 			      [label "State"]))
+
+    (define (select-historical-moment m)
+      (match-define (historical-moment alive? state new-endpoints) m)
+
+      (when (not (equal? displayed-endpoints new-endpoints))
+	(send endpoints clear)
+	(for [(ep (in-list new-endpoints))]
+	  (match-define (list pre-eid meta? (core:role orientation topic interest-type)) ep)
+	  (define n (send endpoints get-number))
+	  (send endpoints append (~v pre-eid))
+	  (send endpoints set-string n (if meta? "Meta" "") 1)
+	  (send endpoints set-string n (case orientation
+					 [(publisher) "Pub"]
+					 [(subscriber) "Sub"]) 2)
+	  (send endpoints set-string n (case interest-type
+					 [(participant) ""]
+					 [(observer) "Obs"]
+					 [(everything) "***"]) 3)
+	  (send endpoints set-string n (~v topic) 4))
+	(set! displayed-endpoints new-endpoints))
+
+      (send state-canvas set-canvas-background
+	    (if alive?
+		(make-color #xff #xff #xff)
+		(make-color #xff #xd0 #xd0)))
+
+      (send status-indicator refresh)
+
+      (send state-text erase)
+      (send state-text insert (pretty-format state)))
 
     (define controller-thread
       (thread
@@ -185,11 +246,15 @@
     (define (record-event! stamp dir type detail)
       (define n (send events get-number))
       (send events append stamp)
+      (send events set-data n current-historical-moment)
       (send events set-string n dir 1)
       (send events set-string n type 2)
       (send events set-string n (~a detail) 3)
-      (send events set-first-visible-item
-	    (max 0 (- n (- (send events number-of-visible-items) 1)))))
+      (define current-selection (send events get-selection))
+      (when (or (not current-selection) (= current-selection (- n 1)))
+	(send events set-first-visible-item n)
+	(send events set-selection n)
+	(select-historical-moment current-historical-moment)))
 
     (define (format-action action)
       (cond
@@ -226,17 +291,49 @@
 	      (string-ref (symbol->string interest-type) 0)
 	      topic))
 
+    (define (apply-action! a)
+      (cond
+       [(core:yield? a) (void)]
+       [(core:at-meta-level? a) (apply-preaction! #t (core:at-meta-level-preaction a))]
+       [else (apply-preaction! #f a)]))
+
+    (define (apply-preaction! meta? p)
+      (match p
+	[(core:quit #f reason)
+	 (set! current-historical-moment
+	       (struct-copy historical-moment current-historical-moment
+		 [alive? #f]))]
+	[(core:add-endpoint pre-eid role handler)
+	 (set! current-historical-moment
+	       (struct-copy historical-moment current-historical-moment
+		 [endpoints (append (filter (lambda (e) (not (equal? (car e) pre-eid)))
+					    (historical-moment-endpoints
+					     current-historical-moment))
+				    (list (list pre-eid meta? role)))]))]
+	[(core:delete-endpoint pre-eid reason)
+	 (set! current-historical-moment
+	       (struct-copy historical-moment current-historical-moment
+		 [endpoints (filter (lambda (e) (not (equal? (car e) pre-eid)))
+				    (historical-moment-endpoints
+				     current-historical-moment))]))]
+	[_ (void)]))
+
     (define (handle-from-vm x)
       (define now (current-timestamp))
       (match x
 	[(core:transition state actions)
-	 (send state-text erase)
-	 (send state-text insert (pretty-format state))
+	 (when (or (not booted?)
+		   (not (equal? state (historical-moment-state current-historical-moment))))
+	   (set! booted? #t)
+	   (set! current-historical-moment
+		 (struct-copy historical-moment current-historical-moment [state state]))
+	   (record-event! now "Txn" "State" (~v state)))
 	 (let loop ((a actions))
 	   (cond
 	    [(pair? a) (loop (car a)) (loop (cdr a))]
 	    [(or (null? a) (eq? a #f) (void? a)) (void)]
 	    [else (define-values (type detail) (format-action a))
+		  (apply-action! a)
 		  (record-event! now "Act" type detail)]))
 	 (call-with-semaphore
 	  mutex
@@ -258,10 +355,12 @@
     (define (controller-thread-loop)
       (sync (handle-evt from-vm
 			(lambda (x)
-			  (handle-from-vm x)
+			  (queue-callback (lambda () (handle-from-vm x)))
 			  (controller-thread-loop)))))
 
     (super-new)
+
+    (select-historical-moment current-historical-moment)
 
     (send frame show #t)
     ))
