@@ -19,7 +19,8 @@
 
 (require racket/pretty)
 
-(require (prefix-in core: "../types.rkt"))
+(require (prefix-in core: "../types.rkt")
+	 (prefix-in core: "../vm.rkt"))
 
 (provide open-debugger)
 
@@ -69,6 +70,17 @@
     (unsafe-struct-set! wrapped-val 0 (thunk inner))
     wrapped-val))
 
+(define sane-tab-panel%
+  (class tab-panel%
+    (super-new)
+    (define/override (place-children l width height)
+      (for/list [(child-spec (in-list l))]
+	(match-define (list min-w min-h v-stretch? h-stretch?) child-spec)
+	(list 0
+	      0
+	      (if h-stretch? width min-w)
+	      (if v-stretch? height min-h))))))
+
 (define debugger%
   (class object%
 
@@ -99,13 +111,10 @@
     (define edit-menu (new menu% [label "Edit"] [parent menu-bar]))
     (append-editor-operation-menu-items edit-menu #f)
 
-    (define toolbar (new horizontal-pane%
-			 [parent frame]
-			 [stretchable-height #f]
-			 [alignment '(right center)]))
-
-    (define state-panel (new horizontal-panel%
-			     [parent frame]))
+    (define state-panel (new sane-tab-panel%
+			     [parent frame]
+			     [choices '("Process State")]
+			     [callback (lambda (p e) (select-state-tab))]))
 
     (define endpoints (new list-box%
 			   [style '(single column-headers)]
@@ -132,6 +141,11 @@
     (send endpoints set-column-width 3 FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH)
 
     (send events set-column-width 1 FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH FIXED-COLUMN-WIDTH)
+
+    (define toolbar (new horizontal-pane%
+			 [parent frame]
+			 [stretchable-height #f]
+			 [alignment '(right center)]))
 
     (define (toolbar-button label [handler void])
       (new button%
@@ -211,6 +225,14 @@
 			      [editor state-text]
 			      [label "State"]))
 
+    (define vm-display (new list-box%
+			    [style '(single column-headers)]
+			    [label #f]
+			    [choices '()]
+			    [parent state-panel]
+			    [columns '("PID" "#Endpoints" "#MetaEndpoints" "Name")]))
+    (send vm-display show #f)
+
     (define (select-historical-moment m)
       (match-define (historical-moment alive? state new-endpoints) m)
 
@@ -239,7 +261,27 @@
       (send status-indicator refresh)
 
       (send state-text erase)
-      (send state-text insert (pretty-format state)))
+      (send state-text insert (pretty-format state))
+
+      (when (core:vm? state)
+	(refresh-vm-display state)
+	(when (= 1 (send state-panel get-number))
+	  (send state-panel append "VM State")
+	  (send state-panel set-selection 1)
+	  (select-state-tab))))
+
+    (define (refresh-vm-display v)
+      (define procs (sort (hash->list (core:vm-processes v)) < #:key car))
+      (send vm-display clear)
+      (for [(entry (in-list procs))]
+	(match-define (cons pid wp) entry)
+	;;(wp (lambda (p) (displayln `(P ,p))))
+	(displayln (cons pid wp))))
+
+    (define (select-state-tab)
+      (define selection (send state-panel get-selection))
+      (send state-canvas show (= selection 0))
+      (send vm-display show (= selection 1)))
 
     (define controller-thread
       (thread
