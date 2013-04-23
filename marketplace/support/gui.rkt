@@ -15,12 +15,13 @@
 (require images/icons/misc)
 (require images/icons/style)
 
+(require data/queue)
+
 (require racket/pretty)
 
 (require (prefix-in core: "../types.rkt"))
 
-(provide any-state?
-	 open-debugger)
+(provide open-debugger)
 
 ;; Frame
 ;;   Toolbar
@@ -45,18 +46,28 @@
 
 (struct historical-moment (alive? state endpoints) #:transparent)
 
-(define (any-state? x) #t)
-
 (define (open-debugger name)
   (define to-debugger (make-channel))
-  (define from-debugger (make-semaphore 0))
+  (define from-debugger (make-channel))
   (parameterize ((current-eventspace (make-eventspace)))
     (new debugger%
 	 [name name]
 	 [from-vm to-debugger]
 	 [to-vm from-debugger]))
-  (values (lambda (t) (channel-put to-debugger t))
-	  (lambda () (semaphore-wait from-debugger))))
+  (wrap/unwrapper
+   (lambda (v)
+     (channel-put to-debugger v)
+     (channel-get from-debugger))))
+
+;; This is utterly vile.
+(define (wrap/unwrapper thunk)
+  (local-require racket/unsafe/ops)
+  (lambda (wrapped-val)
+    ;; (pretty-print `(wrapped-val ,wrapped-val))
+    (define inner (unsafe-struct-ref wrapped-val 0))
+    ;; (pretty-print `(inner ,inner))
+    (unsafe-struct-set! wrapped-val 0 (thunk inner))
+    wrapped-val))
 
 (define debugger%
   (class object%
@@ -67,7 +78,13 @@
 
     (define mutex (make-semaphore 1))
     (define stepping? #t)
-    (define waiting? #f)
+    (define k-queue (make-queue))
+
+    (define (reply-to-vm reply)
+      (call-with-semaphore mutex
+       (lambda () (if stepping?
+		      (channel-put to-vm reply)
+		      (enqueue! k-queue reply)))))
 
     (define current-historical-moment (historical-moment #t (void) '()))
     (define displayed-endpoints '())
@@ -150,9 +167,8 @@
 			 mutex
 			 (lambda ()
 			   (set! stepping? #t)
-			   (when waiting?
-			     (set! waiting? #f)
-			     (semaphore-post to-vm)))))))
+			   (when (non-empty-queue? k-queue)
+			     (channel-put to-vm (dequeue! k-queue))))))))
     (toolbar-spacer)
     (define step-button
       (toolbar-button (step-icon #:color run-icon-color)
@@ -160,9 +176,8 @@
 			(call-with-semaphore
 			 mutex
 			 (lambda ()
-			   (when waiting?
-			     (set! waiting? #f)
-			     (semaphore-post to-vm)))))))
+			   (when (non-empty-queue? k-queue)
+			     (channel-put to-vm (dequeue! k-queue))))))))
 
     (send play-button enable #f)
     (send step-button enable #f)
@@ -335,12 +350,7 @@
 	    [else (define-values (type detail) (format-action a))
 		  (apply-action! a)
 		  (record-event! now "Act" type detail)]))
-	 (call-with-semaphore
-	  mutex
-	  (lambda ()
-	    (if stepping?
-		(semaphore-post to-vm)
-		(set! waiting? #t))))]
+	 (reply-to-vm x)]
 	[(cons meta? e)
 	 (define prefix (if meta? "Meta" ""))
 	 (match e
@@ -350,7 +360,8 @@
 	    (record-event! now "Evt" (string-append prefix "Absence")
 			   (string-append (format-role role) " " (~v reason)))]
 	   [(core:message-event _ message)
-	    (record-event! now "Evt" (string-append prefix "Recv") (~v message))])]))
+	    (record-event! now "Evt" (string-append prefix "Recv") (~v message))])
+	 (reply-to-vm x)]))
 
     (define (controller-thread-loop)
       (sync (handle-evt from-vm

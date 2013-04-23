@@ -9,12 +9,11 @@
 (require "../quasiqueue.rkt")
 
 (require/typed "gui.rkt"
-	       [opaque AnyState any-state?]
-	       [open-debugger (Any -> (Values (AnyState -> Void) (-> Void)))])
+	       [open-debugger (Any -> Debugger)])
+
+(define-type Debugger (All (S) (S -> S)))
 
 (provide debug)
-
-(struct: debugger ([out : (AnyState -> Void)] [in : (-> Void)]))
 
 (: debug : (All (ParentState) (Spawn ParentState) -> (Spawn ParentState)))
 (define (debug spawn-child)
@@ -27,9 +26,7 @@
       (define (wrapped-cotransition k)
 	(: receiver : (All (S) (Transition S) -> R))
 	(define (receiver child-transition)
-	  (define-values (send-to-debugger! receive-from-debugger!)
-	    (open-debugger debug-name))
-	  (define d (debugger send-to-debugger! receive-from-debugger!))
+	  (define d (open-debugger debug-name))
 	  ((inst k S) (wrap-transition d child-transition)))
 	((inst original-cotransition R) receiver))
       wrapped-cotransition))
@@ -37,12 +34,11 @@
    (list 'debug debug-name)))
 
 (: wrap-transition : (All (ChildState)
-			  debugger
+			  Debugger
 			  (Transition ChildState)
 			  -> (Transition ChildState)))
-(define (wrap-transition d child-transition)
-  ((debugger-out d) (cast child-transition AnyState))
-  ((debugger-in d))
+(define (wrap-transition d child-transition0)
+  (define child-transition ((inst d (Transition ChildState)) child-transition0))
   (match-define (core:transition child-state child-actions) child-transition)
   (core:transition child-state ((inst action-tree-map ChildState)
 				(wrap-action d)
@@ -57,7 +53,7 @@
    (quasiqueue->list (action-tree->quasiqueue actions))))
 
 (: wrap-action : (All (ChildState)
-		      debugger
+		      Debugger
 		      -> ((Action ChildState) -> (Action ChildState))))
 (define ((wrap-action d) action)
   (cond
@@ -70,7 +66,7 @@
 
 (: wrap-preaction : (All (ChildState)
 			 Boolean
-			 debugger
+			 Debugger
 			 (PreAction ChildState)
 			 -> (PreAction ChildState)))
 (define (wrap-preaction meta? d preaction)
@@ -87,7 +83,7 @@
      preaction]))
 
 (: wrap-interruptk : (All (ChildState)
-			  debugger
+			  Debugger
 			  (InterruptK ChildState)
 			  -> (InterruptK ChildState)))
 (define (wrap-interruptk d ik)
@@ -95,7 +91,7 @@
     (wrap-transition d (ik state))))
 
 (: wrap-spawnk : (All (ChildState)
-		      debugger
+		      Debugger
 		      (Option (PID -> (InterruptK ChildState)))
 		      -> (Option (PID -> (InterruptK ChildState)))))
 (define (wrap-spawnk d maybe-k)
@@ -104,10 +100,10 @@
 
 (: wrap-handler : (All (ChildState)
 		       Boolean
-		       debugger
+		       Debugger
 		       (Handler ChildState)
 		       -> (Handler ChildState)))
-(define (wrap-handler meta? d h)
-  (lambda (event)
-    ((debugger-out d) (cast (cons meta? event) AnyState))
+(define (wrap-handler meta?0 d h)
+  (lambda (event0)
+    (match-define (cons meta? event) ((inst d (Pairof Boolean EndpointEvent)) (cons meta?0 event0)))
     (wrap-interruptk d (h event))))
