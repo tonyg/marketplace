@@ -1,0 +1,74 @@
+** Overview
+
+** Concepts
+*** What is a process, what are event handlers?
+*** What is a VM?
+*** Subscription and Advertisement
+**** orientation
+**** topics and patterns
+**** interest-type
+**** roles
+*** Presence
+*** Nesting, relaying, and levels of discourse
+
+** High-level interface
+*** #lang marketplace
+**** ground-vm, ground-vm:
+*** Constructing topics and roles
+**** ?
+**** Role
+**** Orientation
+**** InterestType
+*** Constructing transitions
+**** transition, transition:, transition/no-state
+**** cons-trees of actions; null, false, void; use of (when)
+**** sequence-actions
+*** Actions
+**** Communication-related
+***** endpoint, endpoint:
+***** delete-endpoint
+***** send-message
+***** send-feedback
+**** Process- and scheduling-related
+***** spawn, spawn:
+***** quit
+***** yield, yield:
+***** nested-vm, nested-vm:
+**** Cross-layer
+***** at-meta-level, at-meta-level:
+
+** Low-level interface
+*** Handler functions
+*** Events
+*** Actions
+**** Communication-related
+***** add-endpoint
+***** delete-endpoint
+***** send-message
+**** Process- and scheduling-related
+***** spawn
+***** quit
+***** yield
+**** Cross-layer
+***** at-meta-level
+
+** How the VMs work
+*** run-vm
+*** unification and Racket data (struct-map)
+*** nested VMs
+*** ground VMs and interfacing to Racket's event system
+
+** Drivers
+*** event-relay
+*** tcp-bare
+*** tcp
+*** timer (typed and untyped)
+*** udp (typed and untyped)
+
+** Writing new drivers
+*** pseudo-substruct
+
+** Management and monitoring
+*** generic-spy
+*** logging (MATRIX_LOG)
+*** debugger (experimental)
