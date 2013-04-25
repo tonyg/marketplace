@@ -12,6 +12,11 @@ This manual TODO
 
 @local-table-of-contents[]
 
-@include-section["overview.scrbl"]
-@include-section["echo-server-example.scrbl"]
-@include-section["MISC.scrbl"]
+@include-section["concepts.scrbl"]
+@include-section["highlevel.scrbl"]
+@include-section["lowlevel.scrbl"]
+@include-section["vm.scrbl"]
+@include-section["drivers.scrbl"]
+@include-section["writing-drivers.scrbl"]
+@include-section["management-and-monitoring.scrbl"]
+@include-section["examples.scrbl"]

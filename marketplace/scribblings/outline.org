@@ -1,3 +1,5 @@
+#+STARTUP: nofold
+
 ** Overview
 
 ** Concepts
@@ -72,3 +74,10 @@
 *** generic-spy
 *** logging (MATRIX_LOG)
 *** debugger (experimental)
+
+** Example Applications
+*** TCP echo server
+*** TCP chat server
+*** Authoritative DNS server
+*** DNS resolver server
+*** SSH server

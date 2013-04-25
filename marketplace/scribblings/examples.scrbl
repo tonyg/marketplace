@@ -2,7 +2,9 @@
 @require[racket/include]
 @include{prelude.inc}
 
-@title{Example: Echo Server}
+@title{Examples}
+
+@section{TCP echo Server}
 
 Here is a complete Marketplace program, @tt{examples/echo-paper.rkt}:
 
@@ -40,3 +42,8 @@ action, terminating the connection's process. The heart of our system
 is the interface between a process and its containing VM. Our
 implementation instantiates this interface as a collection of Typed
 Racket programs.
+
+@section{TCP chat server}
+@section{Authoritative DNS server}
+@section{DNS resolver server}
+@section{SSH server}

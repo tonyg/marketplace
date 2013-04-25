@@ -2,7 +2,7 @@
 @require[racket/include]
 @include{prelude.inc}
 
-@title{Overview}
+@title{Concepts}
 
 In this paper, we present a novel "marketplace" approach to
 functional systems programming, generalizing
@@ -26,3 +26,13 @@ nestable virtual machines (VMs). The result suggests a @emph{
 marketplace} metaphor, where communicating programs exist in a
 noisy, crowded, even chaotic context, rather than in a quiet place
 systematically going through their inboxes.
+
+@section{What is a process, what are event handlers?}
+@section{What is a VM?}
+@section{Subscription and Advertisement}
+**** orientation
+**** topics and patterns
+**** interest-type
+**** roles
+@section{Presence}
+@section{Nesting, relaying, and levels of discourse}
