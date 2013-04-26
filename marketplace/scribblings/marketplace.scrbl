@@ -2,7 +2,7 @@
 @require[racket/include]
 @include{prelude.inc}
 
-@title[#:tag "marketplace"]{Marketplace: Functional Systems Programming}
+@title[#:tag "marketplace"]{Marketplace: A Functional Operating System}
 
 @author[(author+email "Tony Garnock-Jones" "tonyg@ccs.neu.edu")]
 

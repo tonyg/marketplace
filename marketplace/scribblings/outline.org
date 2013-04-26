@@ -1,13 +1,13 @@
 #+STARTUP: nofold
 
-** Overview
+** Overview and Motivation
 
 ** Concepts
 *** What is a process, what are event handlers?
 *** What is a VM?
 *** Subscription and Advertisement
 **** orientation
-**** topics and patterns
+**** topics, patterns and messages
 **** interest-type
 **** roles
 *** Presence

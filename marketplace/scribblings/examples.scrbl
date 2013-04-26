@@ -4,11 +4,11 @@
 
 @title{Examples}
 
-@section{TCP echo Server}
+@section{TCP echo server}
 
-Here is a complete Marketplace program, @tt{examples/echo-paper.rkt}:
+Here is a complete Marketplace program:
 
-@#reader scribble/comment-reader (racketmod marketplace
+@#reader scribble/comment-reader (racketmod #:file "examples/echo-paper.rkt" marketplace
 
 (endpoint #:subscriber (tcp-channel ? (tcp-listener 5999) ?)
 	  #:conversation (tcp-channel from to _)

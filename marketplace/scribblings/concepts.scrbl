@@ -28,11 +28,27 @@ noisy, crowded, even chaotic context, rather than in a quiet place
 systematically going through their inboxes.
 
 @section{What is a process, what are event handlers?}
+
+@deftech[#:key "process"]{Processes} are ...
+
 @section{What is a VM?}
-@section{Subscription and Advertisement}
+
+@deftech[#:key "vm"]{Virtual Machines (VMs)} are ...
+
+@section{Endpoints: Subscription and Advertisement}
+
+@deftech{Endpoints} are ...
+
 **** orientation
-**** topics and patterns
+**** topics, patterns and messages
 **** interest-type
 **** roles
+
+Always used to describe the role some process is playing in a
+conversation. Can be used by the currently-running process to describe
+some role it wishes to play, or can be carried in some
+@racket[EndpointEvent] to describe the role some @emph{peer} process
+is playing in a conversation.
+
 @section{Presence}
 @section{Nesting, relaying, and levels of discourse}
