@@ -41,6 +41,48 @@ Typed Racket types capturing various notions of handler function.
 
 }
 
+@section{Topics and Roles}
+
+@deftype[Topic Any]{
+
+As previously mentioned, @tech{topics} are ordinary Racket values
+which may have embedded wildcards.
+
+}
+
+@defthing[? Topic]{
+
+Each time @racket[?] is used in an expression context, it produces a
+fresh topic wildcard, suitable for use in a topic pattern.
+
+}
+
+@deftogether[(
+@defstruct*[role ([orientation Orientation] [topic Topic] [interest-type InterestType]) #:prefab]
+@deftype[Role role]
+)]{
+
+Roles are almost always constructed by the
+@racket[endpoint]/@racket[endpoint:] macros or by the VM
+implementations themselves. User programs generally only need to
+destructure @racket[role] instances.
+
+TODO: Role
+
+}
+
+@deftype[Orientation (U 'publisher 'subscriber)]{
+
+TODO: Orientation
+
+}
+
+@deftype[InterestType (U 'participant 'observer 'everything)]{
+
+TODO: InterestType
+
+}
+
 @section{Endpoint Events}
 
 @deftogether[(
@@ -209,11 +251,11 @@ approach.
 @deftype[Quit quit]
 )]{
 
-Kills a sibling.@note{Or, if @racket[at-meta-level], a sibling of the
-containing VM.} If @racket[quit-pid] is @racket[#f], kills the current
-process; otherwise, kills the process with the given PID. The
-@racket[quit-reason] is passed on to peers of currently-active
-endpoints in the process to be killed, as part of a
+Kills a sibling process.@note{Or, if @racket[at-meta-level], a sibling
+process of the containing VM.} If @racket[quit-pid] is @racket[#f],
+kills the current process; otherwise, kills the process with the given
+PID. The @racket[quit-reason] is passed on to peers of
+currently-active endpoints in the process to be killed, as part of a
 @racket[absence-event], just as if each active endpoint were deleted
 manually before the process exited.
 

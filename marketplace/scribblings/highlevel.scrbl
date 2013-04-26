@@ -2,7 +2,20 @@
 @require[racket/include]
 @include{prelude.inc}
 
+@require[(for-label (except-in "../sugar-untyped.rkt"
+			       transition/no-state)
+		    (only-in "../drivers/tcp-bare.rkt" tcp)
+		    (except-in "../sugar-typed.rkt"
+			       ?))]
+
 @title[#:tag "high-level-interface"]{High-level interface}
+
+This high-level interface between a VM and a process is analogous to
+the @emph{C library interface} of a Unix-like operating system. The
+@secref{low-level-interface} corresponds to the @emph{system call
+interface} of a Unix-like operating system.
+
+@section{Using @tt{#lang marketplace} and friends}
 
 @defmodulelang*[(marketplace
 		 marketplace/flow-control
@@ -35,11 +48,6 @@ There are a handful of variant languages to choose from:
   @racket[marketplace/flow-control], but for typed programs.}
 
 ]
-
-This high-level interface between a VM and a process is analogous to
-the @emph{C library interface} of a Unix-like operating system. The
-@secref{low-level-interface} corresponds to the @emph{system call
-interface} of a Unix-like operating system.
 
 @section{Using Marketplace as a library}
 
@@ -90,10 +98,12 @@ its state type).
 
 @section{Constructing topics and roles}
 
-**** ?
-**** Role
-**** Orientation
-**** InterestType
+As previously mentioned, @tech{topics} are ordinary Racket values
+which may have embedded wildcards. The identifier @racket[?] produces
+a fresh wildcard value for use in topic patterns.
+
+For example,
+TODO
 
 @section{Constructing transitions}
 **** transition, transition:, transition/no-state
