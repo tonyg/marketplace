@@ -4,7 +4,7 @@
 
 @title{Examples}
 
-@section{TCP echo server}
+@section[#:tag "echo-server-example"]{TCP echo server}
 
 Here is a complete Marketplace program:
 

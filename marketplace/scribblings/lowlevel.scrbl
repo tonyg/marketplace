@@ -4,18 +4,23 @@
 
 @require[(for-label "../main.rkt")]
 
-@title{Low-level interface}
+@title[#:tag "low-level-interface"]{Low-level interface}
 
 @defmodule[marketplace]
 
-@section{Handler Functions}
-
 At its heart, the interface between each @tech{process} and its
-containing @tech{VM} is based on @emph{handler functions} exchanging
-@emph{event} and @emph{action} structures with the VM. Both events and
+containing @tech{VM} is based on @tech{handler functions} exchanging
+@tech{event} and @tech{action} structures with the VM. Both events and
 actions are simple Racket structures.
 
-Each handler function is always associated with a particular
+This low-level interface between a VM and a process is analogous to
+the @emph{system call interface} of a Unix-like operating system. The
+@secref{high-level-interface} corresponds to the @emph{C library
+interface} of a Unix-like operating system.
+
+@section{Handler Functions}
+
+Each @deftech{handler function} is always associated with a particular
 @tech{endpoint}, registered with the VM via
 @racket[endpoint]/@racket[endpoint:]/@racket[add-endpoint]. A handler
 function for a given process with state type @racket[State] has type:
