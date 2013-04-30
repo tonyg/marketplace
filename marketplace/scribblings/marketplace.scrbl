@@ -15,7 +15,6 @@ This manual TODO
 @include-section["concepts.scrbl"]
 @include-section["highlevel.scrbl"]
 @include-section["lowlevel.scrbl"]
-@include-section["vm.scrbl"]
 @include-section["drivers.scrbl"]
 @include-section["writing-drivers.scrbl"]
 @include-section["management-and-monitoring.scrbl"]

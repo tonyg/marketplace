@@ -44,6 +44,3 @@ implementation instantiates this interface as a collection of Typed
 Racket programs.
 
 @section{TCP chat server}
-@section{Authoritative DNS server}
-@section{DNS resolver server}
-@section{SSH server}
