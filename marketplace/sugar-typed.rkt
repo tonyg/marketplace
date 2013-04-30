@@ -122,7 +122,9 @@
 			 state
 			 (match message
 			   [message-pattern clause-body] ...
-			   [_ '()]))))])))])))
+			   [_ '()]))))]
+	     [_
+	      (lambda: ([state : State]) ((inst core:transition State) state '()))])))])))
 
 (define-syntax spawn:
   (lambda (stx)

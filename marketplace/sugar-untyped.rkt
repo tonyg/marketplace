@@ -108,7 +108,9 @@
 			(core:transition state
 					 (match message
 					   [message-pattern clause-body] ...
-					   [_ '()]))))])))])))
+					   [_ '()]))))]
+	     [_
+	      (lambda (state) (core:transition state '()))])))])))
 
 (define-syntax spawn
   (lambda (stx)
