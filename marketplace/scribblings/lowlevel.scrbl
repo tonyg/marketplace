@@ -224,7 +224,10 @@ some publisher, it will be @racket['subscriber]. See also
 @defstruct*[spawn ([spec process-spec] [k (Option (PID -> (InterruptK State)))] [debug-name Any])
 		  #:prefab]
 @defstruct*[process-spec ([boot (PID -> CoTransition)]) #:prefab]
-@deftype[CoTransition (All (Result) (All (State) (Transition State) -> Result) -> Result)]
+@deftype[CoTransition
+	 (All (Result)
+	      (All (State) (Transition State) -> Result)
+	      -> Result)]
 @deftype[(Spawn State) (spawn State)]
 @deftype[ProcessSpec process-spec]
 )]{
