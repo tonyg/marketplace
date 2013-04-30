@@ -8,7 +8,7 @@
 
 @defmodulelang[marketplace]
 
-This manual TODO
+This manual TODO (overview & motivation)
 
 @local-table-of-contents[]
 
