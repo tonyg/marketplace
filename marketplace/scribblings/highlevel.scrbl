@@ -15,7 +15,7 @@ the @emph{C library interface} of a Unix-like operating system. The
 @secref{low-level-interface} corresponds to the @emph{system call
 interface} of a Unix-like operating system.
 
-@section{Using @tt{#lang marketplace} and friends}
+@section[#:tag "hashlang-variations"]{Using @tt{#lang marketplace} and friends}
 
 @defmodulelang*[(marketplace
 		 marketplace/flow-control
