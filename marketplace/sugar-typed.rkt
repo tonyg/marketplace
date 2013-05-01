@@ -75,7 +75,7 @@
 		       #`(lambda: ([state : State]) (match state [state-pattern e-attr]))
 		       #`(lambda: ([state : State]) ((inst core:transition State) state e-attr)))])
 	     #`([event-pattern (lambda: ([state : State])
-				 ((inst core:transition State) state '()))])))
+				 (core:transition state '()))])))
        (define role-pattern
 	 (cond
 	  [(attribute role)
@@ -116,7 +116,7 @@
 			  [state-pattern
 			   (match message
 			     [message-pattern clause-body] ...
-			     [_ ((inst core:transition State) state '())])]))
+			     [_ (core:transition state '())])]))
 		    #`(lambda: ([state : State])
 			((inst core:transition State)
 			 state
@@ -124,7 +124,7 @@
 			   [message-pattern clause-body] ...
 			   [_ '()]))))]
 	     [_
-	      (lambda: ([state : State]) ((inst core:transition State) state '()))])))])))
+	      (lambda: ([state : State]) (core:transition state '()))])))])))
 
 (define-syntax spawn:
   (lambda (stx)
