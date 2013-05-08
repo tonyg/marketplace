@@ -4,16 +4,15 @@
 
 @title{Concepts}
 
-We integrate ideas from both distributed systems
-and virtualized operating system designs to obtain a novel
-architecture of nested virtual machines. Each nested layer is equipped with
-its own publish/subscribe network that also propagates information
-about the (dis)appearance of services.
+Marketplace integrates ideas from both distributed systems and
+virtualized operating system designs to obtain an architecture of
+nested @emph{virtual machines}. Each nested layer is equipped with its
+own publish/subscribe network that also propagates @emph{presence}
+information about the (dis)appearance of services.
 
-The result suggests a @emph{
-marketplace} metaphor, where communicating programs exist in a
-noisy, crowded, even chaotic context, rather than in a quiet place
-systematically going through their inboxes.
+The result suggests a @emph{marketplace} metaphor, where communicating
+programs exist in a noisy, crowded, even chaotic context, rather than
+in a quiet place systematically going through their inboxes.
 
 @section{What is a process, what are event handlers?}
 

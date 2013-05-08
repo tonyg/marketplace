@@ -2,6 +2,10 @@
 (require scribble/racket
 	 scribble/eval
 	 scriblib/footnote
+
+	 slideshow/pict
+	 "vm-pictures.rkt"
+
 	 (for-syntax racket)
 	 (for-label typed/racket/base))
 
@@ -17,3 +21,6 @@
 	   desc ...)]
       [(_ t d desc ...)
        #`(defthing #:kind "type" t d desc ...)])))
+
+(define (vm-figure p)
+  (centered (to-element (render (scale p 1.2) #:target 'pict))))

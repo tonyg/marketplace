@@ -66,14 +66,20 @@ Programs can handle exceptions to @emph{contain} partial failure:
 Partial failures interact with shared, mutable state in unpredictable
 ways, especially in larger programs that combine stateful subprograms.
 
-Programmers often ignore issues of security and trust between
-subprograms within a larger program. Most programming languages
-entirely lack any means of securely isolating subprograms from each
-other, leading to predictable failures. Even memory-safe languages
-such as Racket, Java and .NET only offer weak techniques for securely
-composing mutually suspicious subprograms. Techniques such as avoiding
-@emph{ambient authority} and using @emph{object capabilities} to
-compose subprograms
+@note{For a good overview of PL-based approaches to security and
+trust, see Mark S. Miller's
+"@hyperlink["http://www.erights.org/talks/thesis/markm-thesis.pdf"]{Robust
+composition: Towards a unified approach to access control and
+concurrency control}" and Jonathan A. Rees's
+"@hyperlink["http://dspace.mit.edu/bitstream/handle/1721.1/5944/AIM-1564.pdf"]{A
+Security Kernel Based on the Lambda-Calculus}".} Programmers often
+ignore issues of security and trust between subprograms within a
+larger program. Most programming languages entirely lack any means of
+securely isolating subprograms from each other, leading to predictable
+failures. Even memory-safe languages such as Racket, Java and .NET
+only offer weak techniques for securely composing mutually suspicious
+subprograms. Techniques such as avoiding @emph{ambient authority} and
+using @emph{object capabilities} to compose subprograms
 
 TODO ^
 
@@ -81,22 +87,29 @@ TODO ^
 
 Programs which engage in I/O are very obviously part of a network:
 
-@racketblock[(define username (read-line))
-	     (printf "Hello, ~a!\n" username)]
+@racketblock[(define (greet-user)
+	       (define username (read-line))
+	       (define greeting (format "Hello, ~a!\n" username))
+	       (display greeting)
+	       (newline))
+	     (greet-user)]
 
-But look closely! There is a difference here between the kind of communication 
+Here, the network has two components: the program, and the user at the
+terminal.
 
-This program is more obviously composed of a number of moving pieces:
+But look closely! There is a difference here between the kind of
+communication between this program and its @emph{peer} and the
+communication @emph{internal} to the program itself. Portions of the
+program relay information from the outside world, translating it to
+and from an internal representation as they go, while other portions
+perform computations on the relayed information.
 
-@interaction[(let ((b (box 3)))
-               (set-box! b (+ (unbox b) 4))
-               (unbox b))]
-
-@interaction[(define (add-three-to b)
-               (set-box! b (+ (unbox b) 3)))
-             (define (add-four-to b)
-               (set-box! b (+ (unbox b) 4)))
-             (define my-box (box 0))
-             (add-three-to my-box)
-             (add-four-to my-box)
-	     (unbox my-box)]
+@vm-figure[(vm (vm-label "Operating System")
+	       (network-label "")
+	       (process "User")
+	       (process-space)
+	       (vm (vm-label "Program")
+		   (network-label "")
+		   (process "Read line")
+		   (process "Format greeting")
+		   (process "Print greeting")))]
