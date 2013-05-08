@@ -1,5 +1,6 @@
 ;; -*- scheme -*-
 (require scribble/racket
+	 scribble/eval
 	 scriblib/footnote
 	 (for-syntax racket)
 	 (for-label typed/racket/base))
