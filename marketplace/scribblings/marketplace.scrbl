@@ -66,7 +66,7 @@ communicate with other networks, via yet other networks.
 
 @local-table-of-contents[]
 
-@include-section["background.scrbl"]
+@;@include-section["background.scrbl"]
 @include-section["concepts.scrbl"]
 @include-section["highlevel.scrbl"]
 @include-section["lowlevel.scrbl"]

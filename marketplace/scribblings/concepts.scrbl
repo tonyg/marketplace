@@ -6,19 +6,65 @@
 
 Marketplace integrates ideas from both distributed systems and
 virtualized operating system designs to obtain an architecture of
-nested @emph{virtual machines}. Each nested layer is equipped with its
-own publish/subscribe network that also propagates @emph{presence}
-information about the (dis)appearance of services.
+nested @emph{virtual machines} (VMs). Each nested layer is equipped
+with its own publish/subscribe network that also propagates
+@emph{presence} information about the (dis)appearance of services.
 
-The result suggests a @emph{marketplace} metaphor, where communicating
-programs exist in a noisy, crowded, even chaotic context, rather than
-in a quiet place systematically going through their inboxes.
+Throughout this manual, diagrams such as the following will illustrate
+various process structures:
+
+@vm-figure[(vm (vm-label "Ground Virtual Machine")
+	       (network-label "Ground-level Network Language")
+	       (process "A Process")
+	       (process "Another Process")
+	       (parameterize ((process-height (* 2/3 (process-height)))
+			      (vm-height (* 2 (vm-height))))
+		 (vm (vc-append (vm-label "Nested VMs are")
+				(vm-label "processes too"))
+		     (network-label "App-specific language")
+		     (process "Process")
+		     (process "Process")
+		     (process "Process")))
+	       (parameterize ((process-height (* 5/4 (process-height))))
+		 (process "Yet another process"))
+	       (parameterize ((process-height (* 2/3 (process-height))))
+		 (vm (vm-label "Another Nested VM")
+		     (network-label "Another language")
+		     (process "Process")
+		     (process "Process"))))]
+
+Rectangular boxes represent VMs. The processes running within each VM
+are placed atop its box. The narrow rectangular strip at the top of
+each VM's box represents the network connecting all the VM's processes
+to each other; it will frequently contain a short description of the
+protocols used for communication across the represented network.
+
+A central feature of Marketplace is that VMs are nothing more than
+regular processes, making them recursively nestable. Each VM supports
+a collection of processes all its own, and its internal IPC medium
+carries a VM-specific protocol that is often different from the
+protocol spoken by its containing VM.
+
+The outermost VM is called the @emph{ground VM}. The protocol spoken
+by processes running within the ground VM is a simple protocol
+relating Racket's @tech{synchronizable events} to Marketplace network
+messages. See @secref{writing-new-drivers} and @secref{Drivers} for
+information on using Racket events from Marketplace programs.
 
 @section{What is a process, what are event handlers?}
 
-@deftech[#:key "process"]{Processes} are ...
+A Marketplace @deftech{process} is a collection of event handlers,
+plus a piece of private @deftech{process state}. Every
+process@note{The exception to this rule is the Ground VM, which plays
+a special role.} runs within a containing VM.
 
-@deftech{Process State} is ...
+When an event occurs that is relevant to a process, one of its event
+handlers is called with the process's current state and a description
+of the event. The handler is expected to return an updated state value
+and a collection of actions for the containing VM to perform. An event
+handler, then, has the following approximate type:
+
+@centered{@italic{State} × @italic{Event} → @italic{State} × (Listof @italic{Action})}
 
 @deftech{Events} ...
 
