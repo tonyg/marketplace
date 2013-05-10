@@ -197,3 +197,49 @@ corresponding @racket[absence-event] is sent to the remaining
 endpoint.
 
 @section{Nesting, relaying, and levels of discourse}
+
+Because VMs can be nested, and each VM has an IPC network of its own
+for the use of its processes, information sometimes needs to be
+relayed from a VM's external network to its internal network and vice
+versa.
+
+In general, the protocol messages sent across a VM's internal network
+may be quite different in syntax and meaning from those sent across
+the same VM's external network: consider the case of the
+@secref{chat-server-example}, which employs a nested VM to separate
+out TCP-related messages from higher-level, application-specific chat
+messages:
+
+@vm-figure[(vm (vm-label "Ground VM")
+	       (network-label "TCP")
+	       (process "TCP driver")
+	       (process "TCP listener")
+	       (process-space)
+	       (process "TCP socket mgr.")
+	       (process "TCP socket mgr.")
+	       (process-ellipsis)
+	       (process-space)
+	       (vm (vm-label "Nested VM")
+		   (network-label "(X says Y)")
+		   (process "Listener")
+		   (process-space)
+		   (process "Chat session")
+		   (process "Chat session")
+		   (process-ellipsis)))]
+
+Each VM's network corresponds to a distinct @emph{level of discourse}.
+The nesting of VMs is then roughly analogous to the layering of
+network protocol stacks. For example (and purely hypothetically!) the
+TCP-IP/HTTP/Webapp stack could perhaps be represented as
+
+@vm-figure[(vm (vm-label "Ground VM")
+	       (network-label "TCP/IP")
+	       (process "TCP driver")
+	       (vm (vm-label "HTTP VM")
+		   (network-label "HTTP sessions/reqs/reps")
+		   (process "HTTP accepter")
+		   (vm (vm-label "Session VM")
+		       (network-label "Session-specific msgs")
+		       (process "App process")
+		       (process-ellipsis))
+		   (process-ellipsis)))]
