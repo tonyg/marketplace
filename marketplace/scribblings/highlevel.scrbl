@@ -97,9 +97,90 @@ its state type).
 }
 
 @section{Constructing transitions}
-**** transition, transition:, transition/no-state
-**** cons-trees of actions; null, false, void; use of (when)
-**** sequence-actions
+
+@deftogether[(
+@defform[(transition new-state action-tree ...)]
+@defform[(transition: new-state : State action-tree ...)]
+@defform[(transition/no-state action-tree ...)]
+)]{
+
+Each of these forms produces a @racket[Transition] structure. The
+first is for untyped code, the second for typed code (where the
+mandatory @racket[State] is the type of the transitioning process's
+private state), and the third for either.
+
+Each @racket[action-tree] must be an @racket[(ActionTree State)].
+
+In the case of @racket[transition/no-state], the type @racket[Void]
+and value @racket[(void)] is used for the process state.
+@racket[transition/no-state] is useful for processes that are
+stateless other than the implicit state of their endpoints.
+
+}
+
+@deftogether[(
+@defstruct*[transition ([state State] [actions (ActionTree State)]) #:transparent]
+@deftype[(Transition State) (transition State)]
+)]{
+
+A transition structure. The @racket[transition-state] field is the new
+private state the process will have after the transition is applied,
+and the @racket[transition-actions] are the actions that will be
+performed by the VM in order to apply the transition.
+
+}
+
+@deftogether[(
+@deftype[(ActionTree State) (Constreeof (Action State))]
+@deftype[(Constreeof X) (Rec CT (U X (Pairof CT CT) False Void Null))]
+)]{
+
+An action-tree is a @deftech{cons-tree} of @racket[Action]s. When
+performing actions, a VM will traverse an action-tree in left-to-right
+order.
+
+Nulls, @racket[(void)] values, and @racket[#f] may also be present in
+action-trees: when the VM reaches such a value, it ignores it and
+continues with the next leaf in the tree.
+
+For example, all of the following are valid action trees which will
+send messages @racket[1], @racket[2] and @racket[3] in that order:
+
+@racketblock[(list (send-message 1)
+		   (send-message 2)
+		   (send-message 3))]
+
+@racketblock[(list (list (send-message 1))
+		   (cons (send-message 2) (cons '() (send-message 3))))]
+
+@racketblock[(cons (cons (send-message 1)
+			 (send-message 2))
+		   (list #f #f (send-message 3)))]
+
+Because @racket[#f] and @racket[(void)] are valid, ignored, members of
+an action-tree, @racket[and] and @racket[when] can be used to
+selectively include actions in an action-tree:
+
+@racketblock[(list (first-action)
+		   (when (condition?)
+		     (optional-action))
+		   (final-action))]
+
+@racketblock[(list (first-action)
+		   (and (condition?)
+			(optional-action))
+		   (final-action))]
+
+}
+
+@defproc[(sequence-actions [initial-transition (Transition State)]
+			   [item (U (ActionTree State)
+				    (State -> (Transition State)))]
+			   ...) (Transition State)]{
+
+TODO
+
+}
 
 @section{Actions}
 **** Communication-related
