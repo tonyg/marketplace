@@ -23,6 +23,10 @@
   (define m (cond
 	     [(struct-mappable? x) (extract-struct-mapper x)]
 	     [(prefab-struct-key x) => prefab-struct-mapper]
+	     [(struct? x)
+	      (define-values (struct-type skipped?) (struct-info x))
+	      (when skipped? (error name "Partial struct-info for ~v" x))
+	      (transparent-struct-mapper struct-type)]
 	     [else (error name "No struct-map property or mapper for ~v" x)]))
   (m f seed x))
 
@@ -33,3 +37,11 @@
       (define-values (new-field new-seed) (f old-field old-seed))
       (values (cons new-field new-fields) new-seed)))
   (values (apply make-prefab-struct key (reverse new-fields)) final-seed))
+
+(define ((transparent-struct-mapper struct-type) f initial-seed x)
+  (define-values (new-fields final-seed)
+    (for/fold ([new-fields '()] [old-seed initial-seed])
+	([old-field (cdr (vector->list (struct->vector x)))])
+      (define-values (new-field new-seed) (f old-field old-seed))
+      (values (cons new-field new-fields) new-seed)))
+  (values (apply (struct-type-make-constructor struct-type) (reverse new-fields)) final-seed))
