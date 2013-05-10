@@ -48,7 +48,7 @@
 
 (struct: eid ([pid : PID]
 	      [pre-eid : PreEID])
-	 #:prefab)
+	 #:transparent)
 
 (define-type Process		(All (R) (CoProcess R) -> R))
 (define-type (CoProcess R)	(All (State) (process State) -> R))

@@ -22,7 +22,7 @@
 (struct: role ([orientation : Orientation]
 	       [topic : Topic]
 	       [interest-type : InterestType])
-	 #:prefab)
+	 #:transparent)
 (define-type Role role)
 
 (define-type Message Topic) ;; Cheesy.
@@ -38,9 +38,9 @@
 			      AbsenceEvent
 			      MessageEvent))
 
-(struct: presence-event ([role : Role]) #:prefab)
-(struct: absence-event ([role : Role] [reason : Reason]) #:prefab)
-(struct: message-event ([role : Role] [message : Message]) #:prefab)
+(struct: presence-event ([role : Role]) #:transparent)
+(struct: absence-event ([role : Role] [reason : Reason]) #:transparent)
+(struct: message-event ([role : Role] [message : Message]) #:transparent)
 (define-type PresenceEvent presence-event)
 (define-type AbsenceEvent absence-event)
 (define-type MessageEvent message-event)
@@ -58,7 +58,7 @@
 
 ;; Specification of a new process
 (struct: process-spec ([boot : (PID -> CoTransition)])
-	 #:prefab)
+	 #:transparent)
 (define-type ProcessSpec process-spec)
 
 (define-type (PreAction State) (U (add-endpoint State)
@@ -71,29 +71,29 @@
 	 add-endpoint ([pre-eid : PreEID]
 		       [role : Role]
 		       [handler : (Handler State)])
-	 #:prefab)
+	 #:transparent)
 (define-type (AddEndpoint State) (add-endpoint State))
 
 (struct: delete-endpoint ([pre-eid : PreEID]
 			  [reason : Reason])
-	 #:prefab)
+	 #:transparent)
 (define-type DeleteEndpoint delete-endpoint)
 
 (struct: send-message ([body : Message]
 		       [orientation : Orientation])
-	 #:prefab)
+	 #:transparent)
 (define-type SendMessage send-message)
 
 (struct: (State)
 	 spawn ([spec : process-spec]
 		[k : (Option (PID -> (InterruptK State)))]
 		[debug-name : Any])
-	 #:prefab)
+	 #:transparent)
 (define-type (Spawn State) (spawn State))
 
 (struct: quit ([pid : (Option PID)] ;; #f = suicide
 	       [reason : Reason])
-	 #:prefab)
+	 #:transparent)
 (define-type Quit quit)
 
 (define-type (Action State) (U (PreAction State)
@@ -102,12 +102,12 @@
 
 (struct: (State)
 	 yield ([k : (InterruptK State)])
-	 #:prefab)
+	 #:transparent)
 (define-type (Yield State) (yield State))
 
 (struct: (State)
 	 at-meta-level ([preaction : (PreAction State)])
-	 #:prefab)
+	 #:transparent)
 (define-type (AtMetaLevel State) (at-meta-level State))
 
 (define-type PID Number)

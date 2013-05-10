@@ -66,7 +66,7 @@
 	 set-timer-repr ([label : TLabel]
 			 [msecs : TMsecs]
 			 [kind : TKind])
-	 #:prefab)
+	 #:transparent)
 
 (pseudo-substruct: (set-timer-repr TimerLabel Real TimerKind)
 		   SetTimer set-timer set-timer?)
@@ -81,7 +81,7 @@
 (struct: (TLabel TMsecs)
 	 timer-expired-repr ([label : TLabel]
 			    [msecs : TMsecs])
-	 #:prefab)
+	 #:transparent)
 
 (pseudo-substruct: (timer-expired-repr TimerLabel Real)
 		   TimerExpired timer-expired timer-expired?)

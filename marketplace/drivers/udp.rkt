@@ -46,7 +46,7 @@
 (struct: (THost TPort)
 	 udp-remote-address-repr ([host : THost]
 				  [port : TPort])
-	 #:prefab)
+	 #:transparent)
 (pseudo-substruct: (udp-remote-address-repr String Natural)
 		   UdpRemoteAddress udp-remote-address udp-remote-address?)
 (pseudo-substruct: (udp-remote-address-repr (U Wild String) (U Wild Natural))
@@ -54,7 +54,7 @@
 
 (struct: (TId)
 	 udp-handle-repr ([id : TId])
-	 #:prefab)
+	 #:transparent)
 (pseudo-substruct: (udp-handle-repr Any)
 		   UdpHandle udp-handle udp-handle?)
 (pseudo-substruct: (udp-handle-repr (U Wild Any))
@@ -62,7 +62,7 @@
 
 (struct: (TPort)
 	 udp-listener-repr ([port : TPort])
-	 #:prefab)
+	 #:transparent)
 (pseudo-substruct: (udp-listener-repr Natural)
 		   UdpListener udp-listener udp-listener?)
 (pseudo-substruct: (udp-listener-repr (U Wild Natural))
@@ -84,7 +84,7 @@
 	 udp-packet-repr ([source : TSource]
 			  [destination : TDestination]
 			  [body : TBody])
-	 #:prefab)
+	 #:transparent)
 (pseudo-substruct: (udp-packet-repr UdpAddress UdpAddress Bytes)
 		   UdpPacket udp-packet udp-packet?)
 (pseudo-substruct: (udp-packet-repr UdpAddressPattern UdpAddressPattern (U Wild Bytes))
@@ -96,7 +96,7 @@
 (struct: (TAddress TSocket)
 	 handle-mapping-repr ([address : TAddress]
 			      [socket : TSocket])
-	 #:prefab)
+	 #:transparent)
 (pseudo-substruct: (handle-mapping-repr UdpLocalAddress Any)
 		   ;; ^ TODO: Want to use UDP-Socket instead of Any here
 		   HandleMapping handle-mapping handle-mapping?)
