@@ -130,14 +130,15 @@ Roles have three parts:
   @item{An @deftech{interest-type} (type @racket[InterestType])
   determines whether the endpoint playing the given role is genuinely
   a participant in matching conversations or is simply observing the
-  real participants. More on interest-types below.}
+  real participants. See @secref{endpoint-dsl} for more on
+  interest-types.}
 
 ]
 
 @deftech{Messages} are simply Racket data structures. They can be any
 value for which @racket[equal?] is defined, any @racket[#:prefab]
-structure or non-object structure for which @racket[prop:struct-map]
-can be defined.
+structure, most @racket[#:transparent] structures, or any non-object
+structure for which @racket[prop:struct-map] can be defined.
 
 @subsection{Topics}
 
@@ -146,13 +147,32 @@ represented as normal data structures @emph{with embedded wildcards}.
 Use @racket[?] or @racket[(wild)] to construct a wildcard. For
 example, given the following definition,
 
-@racketblock[(struct chat-message (speaker text) #:prefab)]
+@racketblock[(struct chat-message (speaker text) #:transparent)]
 
-TODO HERE
+we can not only create instances that might be used with
+@racket[send-message],
 
-@subsection{Interest Types}
+@racketblock[(chat-message "Tony" "Hello World!")]
 
-...
+but also create topic patterns using @racket[?]. For example, this
+pattern matches anything said by @racket["Tony"]:
+
+@racketblock[(chat-message "Tony" ?)]
+
+This pattern matches chat-messages sent by anyone saying "Hello":
+
+@racketblock[(chat-message ? "Hello")]
+
+And finally, this pattern matches any chat-message at all:
+
+@racketblock[(chat-message ? ?)]
+
+Patterns can be nested. For instance, given the above definition of
+@racket[chat-message], the following pattern matches any chat message
+greeting anybody at all:
+
+@racketblock[(struct greeting (target) #:transparent)
+	     (chat-message ? (greeting ?))]
 
 @section{Presence}
 @section{Nesting, relaying, and levels of discourse}
