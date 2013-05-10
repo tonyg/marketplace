@@ -83,7 +83,7 @@ TODO: InterestType
 
 }
 
-@section{Endpoint Events}
+@section[#:tag "endpoint-events"]{Endpoint Events}
 
 @deftogether[(
 @deftype[EndpointEvent (U PresenceEvent AbsenceEvent MessageEvent)]
@@ -167,7 +167,7 @@ process, the @racket[yield-k] is invoked.
 
 }
 
-@subsection{Endpoints and Messages}
+@subsection[#:tag "endpoints-and-messages"]{Endpoints and Messages}
 
 @deftogether[(
 @defstruct*[add-endpoint ([pre-eid Any] [role Role] [handler (Handler State)]) #:prefab]

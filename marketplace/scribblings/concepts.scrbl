@@ -53,8 +53,8 @@ information on using Racket events from Marketplace programs.
 
 @section{What is a process, what are event handlers?}
 
-A Marketplace @deftech{process} is a collection of event handlers,
-plus a piece of private @deftech{process state}. Every
+A Marketplace @deftech{process} is a collection of @deftech{event
+handlers}, plus a piece of private @deftech{process state}. Every
 process@note{The exception to this rule is the Ground VM, which plays
 a special role.} runs within a containing VM.
 
@@ -66,13 +66,30 @@ handler, then, has the following approximate type:
 
 @centered{@italic{State} × @italic{Event} → @italic{State} × (Listof @italic{Action})}
 
-@deftech{Events} ...
+Event handlers are registered with the VM by creating @tech{endpoints}
+using the @racket[endpoint] macro (described in @secref{Actions}) or
+the low-level @racket[add-endpoint] structure (described in
+@secref{endpoints-and-messages}).
 
-@deftech{Actions} ...
+@deftech{Events}, passed to event handlers, describe the results of
+actions from the outside world, neighbouring processes in the VM, or
+the VM itself. They are implemented as @racket[struct]s. See
+@secref{endpoint-events} for a description of the available event
+structures.
+
+@deftech{Actions}, passed back to the VM by event handlers, describe
+actions the process wishes to perform. See @secref{Actions} for the
+possible actions a process can take.
 
 @section{What is a VM?}
 
-@deftech[#:key "vm"]{Virtual Machines (VMs)} are ...
+@deftech[#:key "vm"]{Virtual Machines (VMs)} are simply a collection
+of processes, plus a shared medium of communication that the contained
+processes use to communicate with each other. VMs offer access to both
+their own @emph{internal} network as well as to the @emph{external}
+network owned by the VM's own containing VM.@note{Again, the only
+exception here is the Ground VM, which interfaces to the underlying
+Racket system and so has no containing VM.}
 
 @section{Endpoints: Subscription and Advertisement}
 
@@ -86,7 +103,10 @@ June 2003, pp. 114–131. There's also plenty out there on the Internet;
 a good starting point is to google for
 @hyperlink["https://www.google.com/search?q=pub/sub message-oriented middleware"]{pub/sub message-oriented middleware}.}
 
-@deftech{Endpoints} are ...
+@deftech{Endpoints} are the representation of a process's engagement
+in some protocol. They pair a description of the process's @tech{role}
+in a conversation with an @tech{event handler} that responds to events
+relating to that role.
 
 A @deftech{role} describes the role some process is playing in a
 conversation. Concretely, roles are represented by @racket[Role]
@@ -114,11 +134,21 @@ Roles have three parts:
 
 ]
 
-@deftech{Messages} are ...
+@deftech{Messages} are simply Racket data structures. They can be any
+value for which @racket[equal?] is defined, any @racket[#:prefab]
+structure or non-object structure for which @racket[prop:struct-map]
+can be defined.
 
 @subsection{Topics}
 
-As mentioned above, topics ...
+As mentioned above, topics are simply patterns over messages. They are
+represented as normal data structures @emph{with embedded wildcards}.
+Use @racket[?] or @racket[(wild)] to construct a wildcard. For
+example, given the following definition,
+
+@racketblock[(struct chat-message (speaker text) #:prefab)]
+
+TODO HERE
 
 @subsection{Interest Types}
 
