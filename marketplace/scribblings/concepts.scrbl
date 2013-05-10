@@ -140,8 +140,6 @@ value for which @racket[equal?] is defined, any @racket[#:prefab]
 structure, most @racket[#:transparent] structures, or any non-object
 structure for which @racket[prop:struct-map] can be defined.
 
-@subsection{Topics}
-
 As mentioned above, topics are simply patterns over messages. They are
 represented as normal data structures @emph{with embedded wildcards}.
 Use @racket[?] or @racket[(wild)] to construct a wildcard. For
