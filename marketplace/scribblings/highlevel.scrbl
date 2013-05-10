@@ -96,15 +96,6 @@ its state type).
 
 }
 
-@section{Constructing topics and roles}
-
-As previously mentioned, @tech{topics} are ordinary Racket values
-which may have embedded wildcards. The identifier @racket[?] produces
-a fresh wildcard value for use in topic patterns.
-
-For example,
-TODO
-
 @section{Constructing transitions}
 **** transition, transition:, transition/no-state
 **** cons-trees of actions; null, false, void; use of (when)
@@ -113,6 +104,7 @@ TODO
 @section{Actions}
 **** Communication-related
 ***** endpoint, endpoint:
+[#:tag "endpoint-dsl"]
 ***** delete-endpoint
 ***** send-message
 ***** send-feedback

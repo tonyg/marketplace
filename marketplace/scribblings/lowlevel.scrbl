@@ -18,7 +18,7 @@ the @emph{system call interface} of a Unix-like operating system. The
 @secref{high-level-interface} corresponds to the @emph{C library
 interface} of a Unix-like operating system.
 
-@section{Handler Functions}
+@section[#:tag "handler-functions"]{Handler Functions}
 
 Each @deftech{handler function} is always associated with a particular
 @tech{endpoint}, registered with the VM via

@@ -81,6 +81,10 @@ structures.
 actions the process wishes to perform. See @secref{Actions} for the
 possible actions a process can take.
 
+Note that the result of an event handler function is actually a
+@racket[Transition] structure; the actual Typed Racket type of event
+handlers is @racket[TrapK], defined in @secref{handler-functions}.
+
 @section{What is a VM?}
 
 @deftech[#:key "vm"]{Virtual Machines (VMs)} are simply a collection
@@ -134,6 +138,8 @@ Roles have three parts:
   interest-types.}
 
 ]
+
+@section[#:tag "messages-and-topics"]{Messages and Topics}
 
 @deftech{Messages} are simply Racket data structures. They can be any
 value for which @racket[equal?] is defined, any @racket[#:prefab]
