@@ -173,4 +173,27 @@ greeting anybody at all:
 	     (chat-message ? (greeting ?))]
 
 @section{Presence}
+
+@deftech{Presence} (respectively its opposite, @deftech{absence}) is
+an indication that a matching conversational partner exists (resp. no
+longer exists) in the network. Presence can be used to synchronize
+conversations, setting up a conversational context before messages are
+sent.
+
+The term "presence" itself is lifted from Instant Messaging protocols
+like XMPP, where it describes the online/offline status of one's chat
+buddies. Here, it describes the online/offline status of peer
+processes, in terms of which conversations they are willing to engage
+in.
+
+The system derives presence information from the set of active pub/sub
+subscription and advertisement endpoints a process has created.
+Creating a new endpoint with a topic pattern that matches some other
+process's endpoint and an orientation @emph{opposite} to the other
+process's endpoint causes @racket[presence-event]s to be sent to both
+endpoints, informing them of the presence of the other. When a process
+crashes, or an endpoint is withdrawn with @racket[delete-endpoint], a
+corresponding @racket[absence-event] is sent to the remaining
+endpoint.
+
 @section{Nesting, relaying, and levels of discourse}
