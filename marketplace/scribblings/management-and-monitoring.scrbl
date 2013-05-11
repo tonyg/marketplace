@@ -22,7 +22,7 @@ each @racket['publisher] message sent to the VM's network.
 
 }
 
-@section{logging (MATRIX_LOG)}
+@section[#:tag "logging"]{logging (MATRIX_LOG)}
 
 @defmodule*[(marketplace/log-untyped
 	     marketplace/log-typed)]{
