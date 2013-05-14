@@ -32,32 +32,32 @@
      (endpoint #:subscriber (tcp-channel any-listener any-remote (wild)) #:everything
 	       #:state active-handles
 	       #:role r
-	       #:on-presence (maybe-spawn-socket r active-handles tcp-listener-manager)
+	       #:on-presence (maybe-spawn-socket r active-handles #f tcp-listener-manager)
 	       #:on-absence (maybe-forget-socket r active-handles))
      (endpoint #:publisher  (tcp-channel any-remote any-listener (wild)) #:everything
 	       #:state active-handles
 	       #:role r
-	       #:on-presence (maybe-spawn-socket r active-handles tcp-listener-manager)
+	       #:on-presence (maybe-spawn-socket r active-handles #f tcp-listener-manager)
 	       #:on-absence (maybe-forget-socket r active-handles))
      (endpoint #:subscriber (tcp-channel any-handle any-remote (wild)) #:observer
 	       #:state active-handles
 	       #:role r
-	       #:on-presence (maybe-spawn-socket r active-handles tcp-connection-manager)
+	       #:on-presence (maybe-spawn-socket r active-handles #t tcp-connection-manager)
 	       #:on-absence (maybe-forget-socket r active-handles))
      (endpoint #:publisher  (tcp-channel any-remote any-handle (wild)) #:observer
 	       #:state active-handles
 	       #:role r
-	       #:on-presence (maybe-spawn-socket r active-handles tcp-connection-manager)
+	       #:on-presence (maybe-spawn-socket r active-handles #t tcp-connection-manager)
 	       #:on-absence (maybe-forget-socket r active-handles)))))
 
 (define tcp (tcp-driver)) ;; pre-instantiated!
 
-(define (maybe-spawn-socket r active-handles driver-fun)
+(define (maybe-spawn-socket r active-handles remote-should-be-ground driver-fun)
   (match r
     [(or (role 'publisher (tcp-channel local-addr remote-addr _) _)
 	 (role 'subscriber (tcp-channel remote-addr local-addr _) _))
      (cond
-      [(ground? remote-addr) (transition active-handles)]
+      [(not (eqv? remote-should-be-ground (ground? remote-addr))) (transition active-handles)]
       [(not (ground? local-addr)) (transition active-handles)]
       [(set-member? active-handles (cons local-addr remote-addr)) (transition active-handles)]
       [else
