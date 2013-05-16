@@ -594,7 +594,9 @@ If @racket[pattern] is supplied, @racket[k-expr] should evaluate to a
 @section{Creating nested VMs}
 
 ***** nested-vm, nested-vm:
+TODO
 
 @section{Relaying across layers}
 
 ***** at-meta-level, at-meta-level:
+TODO
