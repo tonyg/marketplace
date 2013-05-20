@@ -146,9 +146,9 @@
 (define-syntax nested-vm
   (lambda (stx)
     (syntax-parse stx
-      [(_ (~or (~optional (~seq #:let-pid vm-pid) #:defaults ([vm-pid #'p0])
+      [(_ (~or (~optional (~seq #:vm-pid vm-pid) #:defaults ([vm-pid #'p0])
 			  #:name "#:vm-pid")
-	       (~optional (~seq #:let-pid boot-pid) #:defaults ([boot-pid #'p0])
+	       (~optional (~seq #:boot-pid boot-pid) #:defaults ([boot-pid #'p0])
 			  #:name "#:boot-pid")
 	       (~optional (~seq #:initial-state initial-state)
 			  #:defaults ([initial-state #'(void)])

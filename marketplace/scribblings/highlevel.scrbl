@@ -604,10 +604,90 @@ If @racket[pattern] is supplied, @racket[k-expr] should evaluate to a
 
 @section{Creating nested VMs}
 
-***** nested-vm, nested-vm:
-TODO
+@deftogether[(
+@defform[(nested-vm maybe-vm-pid-binding maybe-boot-pid-binding
+		    maybe-initial-state
+		    maybe-debug-name
+		    boot-action-expr ...)]
+@defform[#:literals (:)
+	 (nested-vm: : ParentStateType
+		     maybe-vm-pid-binding maybe-boot-pid-binding
+		     maybe-typed-initial-state
+		     maybe-debug-name
+		     boot-action-expr ...)
+	 #:grammar
+	 [(maybe-vm-pid-binding (code:line)
+				(code:line #:vm-pid identifier))
+	  (maybe-boot-pid-binding (code:line)
+				  (code:line #:boot-pid identifier))
+	  (maybe-initial-state (code:line)
+			       (code:line #:initial-state expr))
+	  (maybe-typed-initial-state (code:line)
+				     (code:line #:initial-state expr : StateType))
+	  (maybe-debug-name (code:line)
+			    (code:line #:debug-name expr))
+	  (boot-action-expr expr)]]
+)]{
+
+Results in a @racket[spawn] action that starts a nested VM. The
+primordial process in the new VM executes the boot-actions with the
+given initial state. (If no initial state is supplied, @racket[(void)]
+is used.)
+
+If @racket[#:vm-pid] is present, the corresponding identifier is bound
+in the boot-action expressions to the container-relative PID of the
+new VM itself. If @racket[#:boot-pid] is present, however, the
+corresponding identifier is bound to the new-VM-relative PID of the
+primordial process in the new VM.
+
+}
 
 @section{Relaying across layers}
 
-***** at-meta-level, at-meta-level:
-TODO
+@deftogether[(
+@defform[#:literals (:) (at-meta-level: : StateType preaction ...)]
+@defproc[(at-meta-level [preaction (PreAction State)] ...) (Action StateType)]
+)]{
+
+Each VM gives its processes access to two distinct IPC facilities: the
+@emph{internal} one, provided for the VM's processes to talk amongst
+themselves, and the @emph{external} one, the network that the VM
+itself is a process within.
+
+Marketplace's actions can apply to either of those two networks. By
+default, actions apply to the VM of the acting process directly, but
+using @racket[at-meta-level] (or @racket[at-meta-level:] in typed
+code) to wrap an action @emph{level-shifts} the action to make it
+apply at the level of the acting process's VM's container instead.
+
+For example, wrapping an @racket[endpoint] in @racket[at-meta-level]
+adds a subscription to the VM's container's network. Instead of
+listening to sibling processes of the acting process, the new endpoint
+will listen to sibling processes of the acting process's VM. In this
+example, the primordial process in the @racket[nested-vm] creates an
+endpoint in the VM's own network, the ground VM:
+
+@racketblock[
+(nested-vm
+ (at-meta-level
+  (endpoint #:subscriber (tcp-channel ? (tcp-listener 5999) ?) ...)))
+]
+
+In this example, a new process is spawned as a sibling of the
+@racket[nested-vm] rather than as a sibling of its primordial process:
+
+@racketblock[
+(nested-vm
+ (at-meta-level
+  (spawn #:child (transition/no-state (send-message 'hello-world)))))
+]
+
+Compare to this example, which spawns a sibling of the
+@racket[nested-vm]'s primordial process:
+
+@racketblock[
+(nested-vm
+ (spawn #:child (transition/no-state (send-message 'hello-world))))
+]
+
+}
