@@ -67,19 +67,56 @@ Roles are almost always constructed by the
 implementations themselves. User programs generally only need to
 destructure @racket[role] instances.
 
-TODO: Role
+A @racket[role] describes the conversational role of a peer as seen by
+some process. For example, a subscriber to topic @racket['foo] with
+interest-type @racket['participant] might receive a presence
+notification carrying the role
+
+@racketblock[(role 'publisher 'foo 'participant)]
+
+Notice that the orientation of the role is the opposite of the
+orientation of the endpoint.
 
 }
 
 @deftype[Orientation (U 'publisher 'subscriber)]{
 
-TODO: Orientation
+Describes an endpoint's orientation: will it be acting as a publisher
+of messages, or as a subscriber to messages? Publishers (orientation
+@racket['publisher]) tend to use @racket[send-message] and tend to
+respond to feedback from subscribers; subscribers
+(@racket['subscriber]) tend to use @racket[send-feedback] and respond
+to messages from publishers.
 
 }
 
 @deftype[InterestType (U 'participant 'observer 'everything)]{
 
-TODO: InterestType
+Using interest-type @racket['participant] in an endpoint's role
+indicates that the endpoint is intending to act as a genuine
+participant in whatever protocol is associated with the endpoint and
+its topic.
+
+Using @racket['observer] indicates that the endpoint is intended to
+@emph{monitor} other ongoing (participant) conversations instead.
+Observer endpoints receive presence and absence notifications about
+participant endpoints, but participant endpoints only receive
+notifications about other participant endpoints, and not about
+observer endpoints.
+
+The @racket['observer] interest-type is intended to make it easier to
+monitor resource demand and supply. The monitoring endpoints/processes
+can react to changing demand by creating or destroying resources to
+match.
+
+Finally, the @racket['everything] interest-type receives notifications
+about presence and absence of @emph{all} the types of endpoint,
+@racket['participant], @racket['observer], and @racket['everything].
+Endpoints with interest-type @racket['everything] are rare: they are
+relevant for managing demand for @emph{observers}, as well as in some
+cases of cross-layer presence/absence propagation. Most programs (and
+even most drivers) will not need to use the @racket['everything]
+interest-type.
 
 }
 
