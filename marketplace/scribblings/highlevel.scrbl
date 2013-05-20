@@ -17,10 +17,14 @@ interface} of a Unix-like operating system.
 
 @section[#:tag "hashlang-variations"]{Using @tt{#lang marketplace} and friends}
 
+@;{
 @defmodulelang*[(marketplace
 		 marketplace/flow-control
 		 marketplace/typed
 		 marketplace/typed/flow-control)]
+}
+
+@defmodulelang[marketplace]
 
 Programs written for Marketplace differ from normal Racket modules
 only in their selection of language. A Racket module written with
@@ -30,8 +34,14 @@ and startup @tech{actions} for an application. Typically, initial
 actions spawn application processes and nested VMs, which in turn
 subscribe to sources of events from the outside world.
 
-There are a handful of variant languages to choose from:
+At present, there's just @tt{#lang marketplace}. In future, there will
+be a variation for Typed Racket, and languages providing greater
+support for flow control, responsibility transfer, and other
+networking concepts. For now, Typed Racket programs must be written as
+@tt{#lang typed/racket} programs using @racket[(require marketplace)]
+and @racket[ground-vm:] explicitly.
 
+@;{
 @itemlist[
 
   @item{@racket[marketplace] is for @emph{untyped} programs, and uses
@@ -48,6 +58,7 @@ There are a handful of variant languages to choose from:
   @racket[marketplace/flow-control], but for typed programs.}
 
 ]
+}
 
 @section{Using Marketplace as a library}
 
