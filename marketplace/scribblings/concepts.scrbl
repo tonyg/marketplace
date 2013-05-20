@@ -48,7 +48,7 @@ protocol spoken by its containing VM.
 The outermost VM is called the @emph{ground VM}. The protocol spoken
 by processes running within the ground VM is a simple protocol
 relating Racket's @tech{synchronizable events} to Marketplace network
-messages. See @secref{writing-new-drivers} and @secref{Drivers} for
+messages. See @;{@secref{writing-new-drivers} and} @secref{Drivers} for
 information on using Racket events from Marketplace programs.
 
 @section{What is a process, what are event handlers?}

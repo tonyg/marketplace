@@ -115,28 +115,94 @@ Use this to describe server sockets.
 
 @subsection{Opening an outbound connection}
 
-TODO
+Choose a @racket[tcp-handle], and then create endpoints as follows:
+
+@racketblock[
+(let ((local (tcp-handle 'some-unique-value))
+      (remote (tcp-address "the.remote.host.example.com" 5999)))
+  (transition/no-state
+   (endpoint #:publisher (tcp-channel local remote ?))
+   (endpoint #:subscriber (tcp-channel remote local ?)
+	     [(tcp-channel _ _ (? eof-object?))
+	      (code:comment "Handle a received end-of-file object")
+	      (transition ...)]
+	     [(tcp-channel _ _ (? bytes? data))
+	      (code:comment "Handle received data")
+	      (transition ...)])))
+]
+
+The TCP driver will automatically create an outbound connection in
+response to the presence of the endpoints. When the endpoints are
+deleted (or the process exits), the TCP driver will notice the absence
+and will close the underlying TCP socket.
+
+For a complete example, see @secref{chat-client-example}.
 
 @subsection{Accepting inbound connections}
 
-TODO
+Choose a port number, and then create an @emph{observer} endpoint as
+follows:
+
+@racketblock[
+(endpoint #:subscriber (tcp-channel ? (tcp-listener 5999) ?) #:observer
+	  #:conversation (tcp-channel them us _)
+	  #:on-presence (spawn #:child (chat-session them us)))
+]
+
+The use of @racket[#:observer] here indicates that this endpoint isn't
+actually interested in exchanging any TCP data; instead, it is
+monitoring demand for such exchanges. The TCP driver uses a rare
+@racket[#:everything] endpoint to monitor the presence of
+@racket[#:observer]s, and creates listening TCP server sockets in
+response. When a connection comes in, the TCP driver spawns a manager
+process which offers regular @racket[#:participant] endpoints for
+communicating on the newly-arrived socket.
+
+To illustrate the code for handling a newly-arrived connection,
+
+@racketblock[
+(define (chat-session them us)
+  (transition/no-state
+   (endpoint #:subscriber (tcp-channel them us ?)
+	     #:on-absence (quit)
+	     [(tcp-channel _ _ (? bytes? data))
+	      (code:comment "Handle incoming data")
+	      (transition ...)])))
+]
 
 @subsection{Receiving data}
 
-TODO
+TCP-related messages will be of the form
+
+@racketblock[(tcp-channel remote-address local-address subpacket)]
+
+where the @racket[subpacket] is either @racket[eof] or a
+@racket[bytes?].
 
 @subsection{Sending data}
 
-TODO
+Send data with
 
+@racketblock[(send-message (tcp-channel local-address remote-address subpacket))]
+
+where, as for receiving data, the @racket[subpacket] is either
+@racket[eof] or a @racket[bytes?].
+
+@;{
 @section{tcp}
-
-TODO
+Not yet documented.
+}
 
 @section{timer (typed and untyped)}
 
-TODO
+For examples of the use of the timer driver, see uses of
+@racket[set-timer] and @racket[timer-expired] in
+@hyperlink["https://github.com/tonyg/marketplace-dns/blob/master/network-query.rkt"]{the
+Marketplace-based DNS resolver}.
 
 @section{udp (typed and untyped)}
 
-TODO
+For examples of the use of the UDP driver, see uses of
+@racket[udp-packet] etc. in
+@hyperlink["https://github.com/tonyg/marketplace-dns/blob/master/tk-dns.rkt"]{the
+Marketplace-based DNS resolver}.
