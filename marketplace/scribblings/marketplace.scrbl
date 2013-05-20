@@ -71,6 +71,6 @@ communicate with other networks, via yet other networks.
 @include-section["highlevel.scrbl"]
 @include-section["lowlevel.scrbl"]
 @include-section["drivers.scrbl"]
-@include-section["writing-drivers.scrbl"]
+@;@include-section["writing-drivers.scrbl"]
 @include-section["management-and-monitoring.scrbl"]
 @include-section["examples.scrbl"]
