@@ -2,6 +2,9 @@
 
 Support code for ICFP submission.
 
+A (draft) manual for Marketplace is available
+[here](http://tonyg.github.io/marketplace/).
+
 This is a [Racket](http://racket-lang.org/) package containing a
 single
 [collection](http://docs.racket-lang.org/reference/collects.html),
