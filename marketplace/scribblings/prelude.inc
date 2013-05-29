@@ -6,8 +6,14 @@
 	 slideshow/pict
 	 "vm-pictures.rkt"
 
+	 "from.rkt"
+
 	 (for-syntax racket)
 	 (for-label typed/racket/base))
+
+(require (for-label (except-in marketplace/sugar-untyped transition/no-state)
+		    (only-in marketplace/drivers/tcp-bare tcp)
+		    (except-in marketplace/sugar-typed ?)))
 
 ;; TODO: make it display "=" instead of ":" connecting the defined
 ;; type to the definition.

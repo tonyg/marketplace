@@ -67,7 +67,7 @@ handler, then, has the following approximate type:
 @centered{@italic{State} × @italic{Event} → @italic{State} × (Listof @italic{Action})}
 
 Event handlers are registered with the VM by creating @tech{endpoints}
-using the @racket[endpoint] macro (described in @secref{Actions}) or
+using the @racket[endpoint] macro (described in @secref{endpoint-dsl}) or
 the low-level @racket[add-endpoint] structure (described in
 @secref{endpoints-and-messages}).
 
@@ -140,6 +140,8 @@ Roles have three parts:
 ]
 
 @section[#:tag "messages-and-topics"]{Messages and Topics}
+
+@declare-exporting[marketplace]
 
 @deftech{Messages} are simply Racket data structures. They can be any
 value for which @racket[equal?] is defined, any @racket[#:prefab]

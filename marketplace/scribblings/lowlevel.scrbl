@@ -2,8 +2,6 @@
 @require[racket/include]
 @include{prelude.inc}
 
-@require[(for-label "../main.rkt")]
-
 @title[#:tag "low-level-interface"]{Low-level interface}
 
 @defmodule[marketplace]
@@ -41,19 +39,30 @@ Typed Racket types capturing various notions of handler function.
 
 }
 
-@section{Topics and Roles}
+@section{Messages, Topics and Roles}
 
-@deftype[Topic Any]{
+@declare-exporting[marketplace marketplace/sugar-untyped marketplace/sugar-typed
+		   #:use-sources (marketplace marketplace/sugar-untyped marketplace/sugar-typed)]
 
-As previously mentioned, @tech{topics} are ordinary Racket values
-which may have embedded wildcards.
+@deftogether[(
+@deftype[Message Any]
+@deftype[Topic Any]
+)]{
+
+As previously mentioned, @tech{messages} are ordinary Racket values,
+and @tech{topics} are ordinary Racket values which may have embedded
+wildcards.
 
 }
 
-@defthing[? Topic]{
+@deftogether[(
+@defproc[(wild) Topic]
+@defthing[#:kind "syntax" ? Topic]
+)]{
 
-Each time @racket[?] is used in an expression context, it produces a
-fresh topic wildcard, suitable for use in a topic pattern.
+Each time @racket[?] (or @racket[(wild)]) is used in an expression
+context, it produces a fresh topic wildcard, suitable for use in a
+topic pattern.
 
 }
 
@@ -170,9 +179,17 @@ handler's @tech{endpoint}.
 
 @section{Actions}
 
+@declare-exporting[marketplace]
+
 @deftogether[(
-@deftype[(Action State) (U (PreAction State) (yield State) (at-meta-level State))]
-@deftype[(PreAction State) (U (add-endpoint State) delete-endpoint send-message (spawn State) quit)]
+@deftype[(Action State) (U (PreAction State)
+			   (yield State)
+			   (at-meta-level State))]
+@deftype[(PreAction State) (U (add-endpoint State)
+			      delete-endpoint
+			      send-message
+			      (spawn State)
+			      quit)]
 )]{
 
 Actions are requests from a process to its containing VM. If wrapped
@@ -237,7 +254,9 @@ Deletes an existing endpoint named @racket[pre-eid]. The given
 @racket[absence-event].
 
 If no specific reason is needed, it is conventional to supply
-@racket[#f] as the @racket[delete-endpoint-reason].
+@racket[#f] as the @racket[delete-endpoint-reason]. See also the
+convenience @from[marketplace/sugar-values]{@racket[delete-endpoint]}
+function from @racket[marketplace/sugar-values].
 
 }
 
@@ -250,8 +269,10 @@ Sends a message to peers.@note{Or, if @racket[at-meta-level], peers of
 the containing VM.} The given @racket[Orientation] should describe the
 role the sender is playing when sending this message: usually, it will
 be @racket['publisher], but when the message is @emph{feedback} for
-some publisher, it will be @racket['subscriber]. See also
-@racket[send-feedback].
+some publisher, it will be @racket['subscriber].
+@from[marketplace/sugar-values]{See also the @racket[send-message] and
+@racket[send-feedback] convenience functions from
+@racket[marketplace/sugar-values].}
 
 }
 

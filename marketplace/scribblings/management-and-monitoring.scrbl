@@ -2,6 +2,13 @@
 @require[racket/include]
 @include{prelude.inc}
 
+@require[(for-label marketplace/support/spy
+		    marketplace/support/debug
+		    marketplace/log-untyped
+		    (except-in marketplace/log-typed
+			       matrix-log
+			       matrix-root-logger))]
+
 @title{Management and Monitoring}
 
 @section{generic-spy}

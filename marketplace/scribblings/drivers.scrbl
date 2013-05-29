@@ -2,6 +2,9 @@
 @require[racket/include]
 @include{prelude.inc}
 
+@require[(for-label marketplace/drivers/event-relay
+		    marketplace/drivers/tcp-bare)]
+
 @title{Drivers}
 
 @section{event-relay}
@@ -41,6 +44,12 @@ variants.
 Returns a @racket[spawn] action which starts a TCP driver. The TCP
 driver should run either directly in a ground VM, or in a nested VM
 with a running @racket[event-relay].
+
+}
+
+@defthing[tcp Spawn]{
+
+A pre-made @racket[spawn] action equivalent to @racket[(tcp-driver)].
 
 }
 

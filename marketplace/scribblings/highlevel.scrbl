@@ -2,13 +2,15 @@
 @require[racket/include]
 @include{prelude.inc}
 
-@require[(for-label (except-in "../sugar-untyped.rkt"
-			       transition/no-state)
-		    (only-in "../drivers/tcp-bare.rkt" tcp)
-		    (except-in "../sugar-typed.rkt"
-			       ?))]
+@require[(for-label (except-in marketplace/sugar-untyped transition/no-state)
+		    (only-in marketplace/drivers/tcp-bare tcp)
+		    (except-in marketplace/sugar-typed ?))]
 
 @title[#:tag "high-level-interface"]{High-level interface}
+
+@declare-exporting[#:use-sources (marketplace/sugar-values
+				  marketplace/sugar-untyped
+				  marketplace/sugar-typed)]
 
 This high-level interface between a VM and a process is analogous to
 the @emph{C library interface} of a Unix-like operating system. The
@@ -63,7 +65,10 @@ and @racket[ground-vm:] explicitly.
 @section{Using Marketplace as a library}
 
 @defmodule*[(marketplace/sugar-untyped
-	     marketplace/sugar-typed)]
+	     marketplace/sugar-typed)
+	    #:use-sources (marketplace/sugar-values
+			   marketplace/sugar-untyped
+			   marketplace/sugar-typed)]
 
 Instead of using Racket's @tt{#lang} feature, ordinary Racket programs
 can use Marketplace features by requiring Marketplace modules
@@ -108,6 +113,11 @@ its state type).
 }
 
 @section[#:tag "constructing-transitions"]{Constructing transitions}
+
+@declare-exporting[#:use-sources (marketplace
+				  marketplace/sugar-values
+				  marketplace/sugar-untyped
+				  marketplace/sugar-typed)]
 
 @deftogether[(
 @defform[(transition new-state action-tree ...)]
@@ -484,10 +494,10 @@ to the orientation of the current endpoint) or
 @defproc[(delete-endpoint [id Any] [reason Any #f]) Action]{
 
 Use this action to delete a previously-added endpoint by name. The
-@racket[delete-endpoint-id] must be @racket[equal?] to the
-corresponding @racket[add-endpoint-pre-eid]; when @racket[endpoint]
-was used to construct the endpoint to be deleted, the relevant name is
-that bound by @racket[#:let-name] or supplied to @racket[#:name]. See
+@racket[id] given must be @racket[equal?] to the corresponding
+@racket[add-endpoint-pre-eid]; when @racket[endpoint] was used to
+construct the endpoint to be deleted, the relevant name is that bound
+by @racket[#:let-name] or supplied to @racket[#:name]. See
 @secref{naming-endpoints}.
 
 If @racket[reason] is supplied, it is included in the corresponding
