@@ -6,8 +6,8 @@
 		    marketplace/support/debug
 		    marketplace/log-untyped
 		    (except-in marketplace/log-typed
-			       matrix-log
-			       matrix-root-logger))]
+			       marketplace-log
+			       marketplace-root-logger))]
 
 @title{Management and Monitoring}
 
@@ -29,38 +29,38 @@ each @racket['publisher] message sent to the VM's network.
 
 }
 
-@section[#:tag "logging"]{logging (MATRIX_LOG)}
+@section[#:tag "logging"]{logging (MARKETPLACE_LOG)}
 
 @defmodule*[(marketplace/log-untyped
 	     marketplace/log-typed)]{
 
-@defform[#:kind "environment variable" #:id MATRIX_LOG MATRIX_LOG]{
+@defform[#:kind "environment variable" #:id MARKETPLACE_LOG MARKETPLACE_LOG]{
 
-Set the @tt{MATRIX_LOG} environment variable to "debug", "info",
+Set the @tt{MARKETPLACE_LOG} environment variable to "debug", "info",
 "warning", "error" or "fatal" (i.e. any of Racket's
 @racket[log-level?]s) to enable output of log messages at that level
 and higher.
 
-If @tt{MATRIX_LOG} is not defined in the environment, @emph{no log
+If @tt{MARKETPLACE_LOG} is not defined in the environment, @emph{no log
 output will be produced}.
 
 }
 
-@defform[(matrix-log level format-str arg ...)
+@defform[(marketplace-log level format-str arg ...)
 	 #:grammar
 	 ((level expr)
 	  (format-str expr)
 	  (arg expr))]{
 
 Analogous to Racket's core @racket[log-message], but uses
-@racket[matrix-root-logger] instead of the system logger. The
+@racket[marketplace-root-logger] instead of the system logger. The
 @racket[level] expression must evaluate to a level symbol (see
 @racket[log-level?]), and @racket[format-str] must evaluate to a
 format string for use with @racket[format].
 
 }
 
-@defthing[matrix-root-logger logger?]{
+@defthing[marketplace-root-logger logger?]{
 
 The root logger for marketplace logging.
 

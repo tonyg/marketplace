@@ -19,7 +19,7 @@
 		   -> (Values (Option (process OldState)) vm)))
 (define (do-spawn spec parent-k p debug-name state)
   (define new-pid (vm-next-process-id state))
-  (matrix-log 'info "PID ~v (~a) starting" new-pid debug-name)
+  (marketplace-log 'info "PID ~v (~a) starting" new-pid debug-name)
   (: new-cotransition : CoTransition)
   (define new-cotransition
     (send-to-user* debug-name new-pid (e) (co-quit e)

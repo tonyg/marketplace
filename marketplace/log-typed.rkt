@@ -1,17 +1,17 @@
 #lang typed/racket/base
 
 (require/typed "log-untyped.rkt"
-	       [matrix-root-logger Logger])
+	       [marketplace-root-logger Logger])
 
 ;; WARNING: duplicated in log-untyped.rkt
-(define-syntax matrix-log
+(define-syntax marketplace-log
   (syntax-rules ()
     [(_ level-exp message)
      (let ((level level-exp))
-       (when (log-level? matrix-root-logger level)
-	 (log-message matrix-root-logger level message #f)))]
+       (when (log-level? marketplace-root-logger level)
+	 (log-message marketplace-root-logger level message #f)))]
     [(_ level format-string exp ...)
-     (matrix-log level (format format-string exp ...))]))
+     (marketplace-log level (format format-string exp ...))]))
 
-(provide matrix-root-logger
-	 matrix-log)
+(provide marketplace-root-logger
+	 marketplace-log)

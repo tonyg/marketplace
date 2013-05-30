@@ -20,13 +20,13 @@
 
   (: log-quit : (All (KilledState) (process KilledState) -> Void))
   (define (log-quit p)
-    (matrix-log (if reason 'warning 'info)
-		"PID ~v (~a) quits with reason: ~a"
-		killed-pid
-		(process-debug-name p)
-		(if (exn? reason)
-		    (exn->string reason)
-		    (format "~v" reason))))
+    (marketplace-log (if reason 'warning 'info)
+		     "PID ~v (~a) quits with reason: ~a"
+		     killed-pid
+		     (process-debug-name p)
+		     (if (exn? reason)
+			 (exn->string reason)
+			 (format "~v" reason))))
 
   (if (equal? killed-pid (process-pid p))
       (let-values (((p state meta-actions) (delete-all-endpoints reason p state)))

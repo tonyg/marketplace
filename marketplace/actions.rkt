@@ -66,7 +66,11 @@
 				  (inject-process state (mkProcess p))
 				  external-actions)]
 		   [(cons action remaining-actions)
-		    (matrix-log 'debug "PID ~v (~a) Action: ~v" pid (process-debug-name p) action)
+		    (marketplace-log 'debug
+				     "PID ~v (~a) Action: ~v"
+				     pid
+				     (process-debug-name p)
+				     action)
 		    (let-values (((p state new-external-actions)
 				  (perform-action action p state)))
 		      (if p
@@ -96,10 +100,10 @@
 		 (unwrap-process State (HashTable PID Process) (p wp)
 		   (if (process-alive? p)
 		       (hash-set processes pid wp)
-		       (begin (matrix-log 'info
-					  "PID ~v (~a) garbage-collected"
-					  pid
-					  (process-debug-name p))
+		       (begin (marketplace-log 'info
+					       "PID ~v (~a) garbage-collected"
+					       pid
+					       (process-debug-name p))
 			      processes))))]))
 
 (: vm-idle? : vm -> Boolean)

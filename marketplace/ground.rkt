@@ -43,7 +43,7 @@
 		(null? active-events))
 	   (begin
 	     ;; Not polling, and no events that could wake us from blocking, so quit
-	     (matrix-log 'debug "Ground VM returning normally.")
+	     (marketplace-log 'debug "Ground VM returning normally.")
 	     (sleep 0.2) ;; give the log-receivers a chance to drain (!)
 	     (void))
 	   (let ((interruptk (apply sync

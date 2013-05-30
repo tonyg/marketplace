@@ -20,14 +20,14 @@
 (define-syntax-rule (send-to-user* debug-name pid (e) failure-result enclosed-expr)
   (with-handlers ([exn:fail? (lambda: ([e : Reason])
 			       (if (exn? e)
-				   (matrix-log 'error "Process ~v(~v):~n~a~n"
-					       debug-name pid (exn-message e))
-				   (matrix-log 'error "Process ~v(~v):~n~v~n"
-					       debug-name pid e))
+				   (marketplace-log 'error "Process ~v(~v):~n~a~n"
+						    debug-name pid (exn-message e))
+				   (marketplace-log 'error "Process ~v(~v):~n~v~n"
+						    debug-name pid e))
 			       failure-result)])
-    (matrix-log 'debug "Entering process ~v(~v)" debug-name pid)
+    (marketplace-log 'debug "Entering process ~v(~v)" debug-name pid)
     (define result enclosed-expr)
-    (matrix-log 'debug "Leaving  process ~v(~v)" debug-name pid)
+    (marketplace-log 'debug "Leaving  process ~v(~v)" debug-name pid)
     result))
 
 (: action-tree->quasiqueue : (All (State) (ActionTree State) -> (QuasiQueue (Action State))))

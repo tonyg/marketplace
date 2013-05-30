@@ -50,7 +50,7 @@
   (define result
     (and (orientations-intersect? (role-orientation left) (role-orientation right))
 	 (mgu-canonical (freshen (role-topic left)) (freshen (role-topic right)))))
-  (matrix-log 'debug "role-intersection ~v // ~v --> ~v" left right result)
+  (marketplace-log 'debug "role-intersection ~v // ~v --> ~v" left right result)
   result)
 
 ;; True iff the flow between remote-role and local-role should be
