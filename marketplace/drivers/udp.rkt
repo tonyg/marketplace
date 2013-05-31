@@ -3,7 +3,12 @@
 
 (require racket/set)
 (require racket/match)
-(require racket/udp)
+
+(require "../support/event.rkt")
+(require (except-in racket/udp udp-receive!-evt))
+(require/typed racket/udp
+	       [udp-receive!-evt (UDP-Socket Bytes -> Evt)])
+
 (require "../sugar-typed.rkt")
 (require "../support/event.rkt")
 (require "../support/pseudo-substruct.rkt")
