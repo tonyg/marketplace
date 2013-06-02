@@ -24,7 +24,7 @@
       (on-absence (quit))
       (on-message
        [(tcp-channel _ _ (? bytes? text))
-	(send-message `(,user says ,text))])))))
+        (send-message `(,user says ,text))])))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (speak-to-user user them us)
@@ -44,4 +44,4 @@
        (on-presence (announce who 'arrived))
        (on-absence  (announce who 'departed))
        (on-message [`(,who says ,what)
-		    (say "~a: ~a" who what)])))))
+                    (say "~a: ~a" who what)])))))
