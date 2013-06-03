@@ -4,7 +4,6 @@
 (require (prefix-in core: "main.rkt"))
 
 (provide transition
-	 at-meta-level
 	 delete-endpoint
 	 send-message
 	 send-feedback
@@ -15,14 +14,6 @@
 (: transition : (All (State) State (core:ActionTree State) * -> (core:Transition State)))
 (define (transition state . actions)
   ((inst core:transition State) state actions))
-
-(: at-meta-level : (All (State)
-			(core:PreAction State) *
-			-> (core:ActionTree State)))
-(define (at-meta-level . preactions)
-  (match preactions
-    [(cons preaction '()) (core:at-meta-level preaction)]
-    [_ ((inst map (core:Action State) (core:PreAction State)) core:at-meta-level preactions)]))
 
 (define (delete-endpoint #{id : Any}
 			 [#{reason : Any} #f])

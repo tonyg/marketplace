@@ -133,41 +133,38 @@
       (transition: (set-add active-handles local-addr) : DriverState
 	(udp-socket-manager local-addr))]))
 
-  (spawn: #:debug-name 'udp-driver
-	  #:parent : ParentState
-	  #:child : DriverState
-	  (transition: ((inst set UdpLocalAddress)) : DriverState
-	    (endpoint: active-handles : DriverState
-		       #:publisher
-		       (udp-packet-pattern any-remote (udp-handle-pattern (wild)) (wild))
-		       #:observer
-		       #:conversation topic
-		       #:on-presence (handle-presence topic active-handles))
-	    (endpoint: active-handles : DriverState
-		       #:publisher
-		       (udp-packet-pattern any-remote (udp-listener-pattern (wild)) (wild))
-		       #:observer
-		       #:conversation topic
-		       #:on-presence (handle-presence topic active-handles))
-	    (endpoint: active-handles : DriverState
-		       #:subscriber
-		       (udp-packet-pattern any-remote (udp-handle-pattern (wild)) (wild))
-		       #:observer
-		       #:conversation topic
-		       #:on-presence (handle-presence topic active-handles))
-	    (endpoint: active-handles : DriverState
-		       #:subscriber
-		       (udp-packet-pattern any-remote (udp-listener-pattern (wild)) (wild))
-		       #:observer
-		       #:conversation topic
-		       #:on-presence (handle-presence topic active-handles))
-	    (endpoint: active-handles : DriverState
-		       #:subscriber (handle-mapping-pattern (wild) (wild))
-		       #:observer
-		       #:conversation (handle-mapping local-addr socket)
-		       #:on-absence
-		       (transition: (set-remove active-handles local-addr) : DriverState))
-	    )))
+  (name-process 'udp-driver
+    (spawn: #:parent : ParentState
+	    #:child : DriverState
+	    (transition: ((inst set UdpLocalAddress)) : DriverState
+
+	      (observe-subscribers: DriverState
+		  (udp-packet-pattern any-remote (udp-handle-pattern (wild)) (wild))
+		(match-state active-handles
+		  (match-conversation topic
+		    (on-presence (handle-presence topic active-handles)))))
+	      (observe-subscribers: DriverState
+		  (udp-packet-pattern any-remote (udp-listener-pattern (wild)) (wild))
+		(match-state active-handles
+		  (match-conversation topic
+		    (on-presence (handle-presence topic active-handles)))))
+	      (observe-publishers: DriverState
+		  (udp-packet-pattern any-remote (udp-handle-pattern (wild)) (wild))
+		(match-state active-handles
+		  (match-conversation topic
+		    (on-presence (handle-presence topic active-handles)))))
+	      (observe-publishers: DriverState
+		  (udp-packet-pattern any-remote (udp-listener-pattern (wild)) (wild))
+		(match-state active-handles
+		  (match-conversation topic
+		    (on-presence (handle-presence topic active-handles)))))
+
+	      (observe-publishers: DriverState (handle-mapping-pattern (wild) (wild))
+		(match-state active-handles
+		  (match-conversation (handle-mapping local-addr socket)
+		    (on-absence
+		     (transition: (set-remove active-handles local-addr) : DriverState)))))
+	      ))))
 
 (: bind-socket! : UDP-Socket UdpLocalAddress -> Void)
 (define (bind-socket! s local-addr)
@@ -192,43 +189,46 @@
     (transition: #f : SocketManagerState
       (quit)
       (when socket-is-open?
-	(spawn: #:debug-name `(udp-socket-closer ,local-addr)
-		#:parent : SocketManagerState
-		#:child : Void
-		(begin (udp-close s)
-		       (transition: (void) : Void (quit)))))))
+	(name-process `(udp-socket-closer ,local-addr)
+	  (spawn: #:parent : SocketManagerState
+		  #:child : Void
+		  (begin (udp-close s)
+			 (transition: (void) : Void (quit))))))))
 
-  (spawn: #:debug-name `(udp-socket-manager ,local-addr)
-	  #:parent : DriverState
-	  #:child : SocketManagerState
-	  (transition: #t : SocketManagerState
-	    ;; Offers a handle-mapping on the local network so that
-	    ;; the driver/factory can clean up when this process dies.
-	    (endpoint: : SocketManagerState #:publisher (handle-mapping local-addr s))
-	    ;; If our counterparty removes either of their endpoints
-	    ;; as the subscriber end of the remote-to-local stream or
-	    ;; the publisher end of the local-to-remote stream, shut
-	    ;; ourselves down. Also, relay messages published on the
-	    ;; local-to-remote stream out on the actual socket.
-	    (endpoint: socket-is-open? : SocketManagerState
-		       #:publisher (udp-packet-pattern any-remote local-addr (wild))
-		       #:on-absence (handle-absence socket-is-open?))
-	    (endpoint: socket-is-open? : SocketManagerState
-		       #:subscriber (udp-packet-pattern local-addr any-remote (wild))
-		       #:on-absence (handle-absence socket-is-open?)
-		       [(udp-packet (== local-addr)
-				    (udp-remote-address remote-host remote-port)
-				    body)
-			(begin (udp-send-to s remote-host remote-port body)
-			       (transition: socket-is-open? : SocketManagerState))])
-	    ;; Listen for messages arriving on the actual socket using
-	    ;; a ground event, and relay them at this level.
-	    (endpoint: : SocketManagerState
-		       #:subscriber (cons (udp-receive!-evt s buffer) (wild))
-		       [(cons (? evt?) (list (? exact-integer? packet-length)
-					     (? string? remote-host)
-					     (? valid-port-number? remote-port)))
-			(let ((packet (subbytes buffer 0 packet-length)))
-			  (send-message (udp-packet (udp-remote-address remote-host remote-port)
-						    local-addr
-						    packet)))]))))
+  (name-process `(udp-socket-manager ,local-addr)
+    (spawn: #:parent : DriverState
+	    #:child : SocketManagerState
+	    (transition: #t : SocketManagerState
+	      ;; Offers a handle-mapping on the local network so that
+	      ;; the driver/factory can clean up when this process dies.
+	      (publish-on-topic: SocketManagerState (handle-mapping local-addr s))
+	      ;; If our counterparty removes either of their endpoints
+	      ;; as the subscriber end of the remote-to-local stream or
+	      ;; the publisher end of the local-to-remote stream, shut
+	      ;; ourselves down. Also, relay messages published on the
+	      ;; local-to-remote stream out on the actual socket.
+	      (publish-on-topic: SocketManagerState
+		  (udp-packet-pattern any-remote local-addr (wild))
+		(match-state socket-is-open?
+		  (on-absence (handle-absence socket-is-open?))))
+	      (subscribe-to-topic: SocketManagerState
+		  (udp-packet-pattern local-addr any-remote (wild))
+		(match-state socket-is-open?
+		  (on-absence (handle-absence socket-is-open?))
+		  (on-message
+		   [(udp-packet (== local-addr)
+				(udp-remote-address remote-host remote-port)
+				body)
+		    (begin (udp-send-to s remote-host remote-port body)
+			   (transition: socket-is-open? : SocketManagerState))])))
+	      ;; Listen for messages arriving on the actual socket using
+	      ;; a ground event, and relay them at this level.
+	      (subscribe-to-topic: SocketManagerState (cons (udp-receive!-evt s buffer) (wild))
+		(on-message
+		 [(cons (? evt?) (list (? exact-integer? packet-length)
+				       (? string? remote-host)
+				       (? valid-port-number? remote-port)))
+		  (let ((packet (subbytes buffer 0 packet-length)))
+		    (send-message (udp-packet (udp-remote-address remote-host remote-port)
+					      local-addr
+					      packet)))]))))))

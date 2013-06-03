@@ -81,49 +81,51 @@
 ;; Spawn
 ;; Process acting as a TCP socket factory.
 (define (tcp-driver)
-  (spawn #:debug-name 'tcp-driver
-	 #:child
-   (transition (set)
-     (endpoint #:subscriber (tcp-channel any-listener any-remote (wild)) #:everything
-	       #:state active-handles
-	       #:role r
-	       #:on-presence (maybe-spawn-socket r active-handles #f tcp-listener-manager)
-	       #:on-absence (maybe-forget-socket r active-handles))
-     (endpoint #:publisher  (tcp-channel any-remote any-listener (wild)) #:everything
-	       #:state active-handles
-	       #:role r
-	       #:on-presence (maybe-spawn-socket r active-handles #f tcp-listener-manager)
-	       #:on-absence (maybe-forget-socket r active-handles))
-     (endpoint #:subscriber (tcp-channel any-handle any-remote (wild)) #:observer
-	       #:state active-handles
-	       #:role r
-	       #:on-presence (maybe-spawn-socket r active-handles #t tcp-connection-manager)
-	       #:on-absence (maybe-forget-socket r active-handles))
-     (endpoint #:publisher  (tcp-channel any-remote any-handle (wild)) #:observer
-	       #:state active-handles
-	       #:role r
-	       #:on-presence (maybe-spawn-socket r active-handles #t tcp-connection-manager)
-	       #:on-absence (maybe-forget-socket r active-handles)))))
+  (name-process 'tcp-driver
+    (spawn
+     (transition (set)
+       (observe-publishers/everything (tcp-channel any-listener any-remote (wild))
+	 (match-state active-handles
+	   (match-conversation c
+	     (on-presence (maybe-spawn-socket 'publisher c active-handles #f tcp-listener-manager))
+	     (on-absence (maybe-forget-socket 'publisher c active-handles)))))
+       (observe-subscribers/everything (tcp-channel any-remote any-listener (wild))
+	 (match-state active-handles
+	   (match-conversation c
+	     (on-presence (maybe-spawn-socket 'subscriber c active-handles #f tcp-listener-manager))
+	     (on-absence (maybe-forget-socket 'subscriber c active-handles)))))
+       (observe-publishers (tcp-channel any-handle any-remote (wild))
+	 (match-state active-handles
+	   (match-conversation c
+	     (on-presence
+	      (maybe-spawn-socket 'publisher c active-handles #t tcp-connection-manager))
+	     (on-absence (maybe-forget-socket 'publisher c active-handles)))))
+       (observe-subscribers (tcp-channel any-remote any-handle (wild))
+	 (match-state active-handles
+	   (match-conversation c
+	     (on-presence
+	      (maybe-spawn-socket 'subscriber c active-handles #t tcp-connection-manager))
+	     (on-absence (maybe-forget-socket 'subscriber c active-handles)))))))))
 
-;; Role Set<HandleMapping> Boolean (TcpAddress TcpAddress -> BootK) -> Transition
-(define (maybe-spawn-socket r active-handles remote-should-be-ground driver-fun)
-  (match r
-    [(or (role 'publisher (tcp-channel local-addr remote-addr _) _)
-	 (role 'subscriber (tcp-channel remote-addr local-addr _) _))
+;; Orientation Topic Set<HandleMapping> Boolean (TcpAddress TcpAddress -> BootK) -> Transition
+(define (maybe-spawn-socket orientation c active-handles remote-should-be-ground driver-fun)
+  (match (list orientation c)
+    [(or (list 'publisher (tcp-channel local-addr remote-addr _))
+	 (list 'subscriber (tcp-channel remote-addr local-addr _)))
      (cond
       [(not (eqv? remote-should-be-ground (ground? remote-addr))) (transition active-handles)]
       [(not (ground? local-addr)) (transition active-handles)]
       [(set-member? active-handles (cons local-addr remote-addr)) (transition active-handles)]
       [else
        (transition (set-add active-handles (cons local-addr remote-addr))
-	 (spawn #:debug-name (cons local-addr remote-addr)
-		#:child (driver-fun local-addr remote-addr)))])]))
+	 (name-process (cons local-addr remote-addr)
+	   (spawn (driver-fun local-addr remote-addr))))])]))
 
-;; Role Set<HandleMapping> -> Transition
-(define (maybe-forget-socket r active-handles)
-  (match r
-    [(or (role 'publisher (tcp-channel local-addr remote-addr _) _)
-	 (role 'subscriber (tcp-channel remote-addr local-addr _) _))
+;; Orientation Topic Set<HandleMapping> -> Transition
+(define (maybe-forget-socket orientation c active-handles)
+  (match (list orientation c)
+    [(or (list 'publisher (tcp-channel local-addr remote-addr _))
+	 (list 'subscriber (tcp-channel remote-addr local-addr _)))
      (cond
       [(ground? remote-addr) (transition active-handles)]
       [(not (ground? local-addr)) (transition active-handles)]
@@ -134,40 +136,40 @@
   (match-define (tcp-listener port) local-addr)
   (define listener (tcp:tcp-listen port 4 #t))
 
-  (define (handle-absence r state)
+  (define (handle-absence orientation c state)
     ;; Hey, what if the presence we need went away between our manager
     ;; spawning us, and us getting to this point? Presence being
     ;; "edge-" rather than "level-triggered" means we'll hang around
     ;; sadly forever, accepting connections to nowhere. TODO
-    (match r
-      [(or (role 'publisher (tcp-channel (== local-addr) remote-addr _) _)
-	   (role 'subscriber (tcp-channel remote-addr (== local-addr) _) _))
+    (match (list orientation c)
+      [(or (list 'publisher (tcp-channel (== local-addr) remote-addr _))
+	   (list 'subscriber (tcp-channel remote-addr (== local-addr) _)))
        (if (ground? remote-addr)
 	   (transition state)
 	   (transition 'listener-is-closed
 	     (quit)
 	     (when (eq? state 'listener-is-running)
-	       (spawn #:debug-name (list 'tcp-listener-closer local-addr)
-		      #:child
-		      (begin (tcp:tcp-close listener)
-			     (transition 'dummy (quit)))))))]))
+	       (name-process (list 'tcp-listener-closer local-addr)
+		 (spawn (begin (tcp:tcp-close listener)
+			     (transition 'dummy (quit))))))))]))
 
   (transition 'listener-is-running
-    (endpoint #:subscriber (tcp-channel local-addr any-remote (wild)) #:everything
-	      #:state state
-	      #:role r
-	      #:on-absence (handle-absence r state))
-    (endpoint #:publisher  (tcp-channel any-remote local-addr (wild)) #:everything
-	      #:state state
-	      #:role r
-	      #:on-absence (handle-absence r state))
-    (endpoint #:subscriber (cons (tcp:tcp-accept-evt listener) (wild))
-	      [(cons _ (list cin cout))
-	       (let-values (((local-hostname local-port remote-hostname remote-port)
-			     (tcp:tcp-addresses cin #t)))
-		 (define remote-addr (tcp-address remote-hostname remote-port))
-		 (spawn #:debug-name (cons local-addr remote-addr)
-			#:child (tcp-connection-manager* local-addr remote-addr cin cout)))])))
+    (observe-publishers/everything (tcp-channel local-addr any-remote (wild))
+      (match-state state
+	(match-conversation c
+	  (on-absence (handle-absence 'publisher c state)))))
+    (observe-subscribers/everything (tcp-channel any-remote local-addr (wild))
+      (match-state state
+	(match-conversation c
+	  (on-absence (handle-absence 'subscriber c state)))))
+    (subscribe-to-topic (cons (tcp:tcp-accept-evt listener) (wild))
+      (on-message
+       [(cons _ (list cin cout))
+	(let-values (((local-hostname local-port remote-hostname remote-port)
+		      (tcp:tcp-addresses cin #t)))
+	  (define remote-addr (tcp-address remote-hostname remote-port))
+	  (name-process (cons local-addr remote-addr)
+	    (spawn (tcp-connection-manager* local-addr remote-addr cin cout))))]))))
 
 ;; TcpAddress TcpAddress -> Transition
 (define (tcp-connection-manager local-addr remote-addr)
@@ -185,11 +187,10 @@
       (when (not (eq? state #f))
 	(list (when send-eof?
 		(send-message (tcp-channel remote-addr local-addr eof)))
-	      (spawn #:debug-name (list 'tcp-connection-closer local-addr remote-addr)
-		     #:child
-		     (begin (tcp:tcp-abandon-port cin)
-			    (tcp:tcp-abandon-port cout)
-			    (transition 'dummy (quit))))))
+	      (name-process (list 'tcp-connection-closer local-addr remote-addr)
+		(spawn(begin (tcp:tcp-abandon-port cin)
+			     (tcp:tcp-abandon-port cout)
+			     (transition 'dummy (quit)))))))
       (quit)))
   (define (adjust-credit state amount)
     (let ((new-credit (+ (tcp-connection-state-credit state) amount)))
@@ -198,56 +199,62 @@
 	(when (positive? new-credit)
 	  (case (tcp-connection-state-mode state)
 	    [(lines)
-	     (endpoint #:subscriber (cons (read-bytes-line-evt cin 'any) (wild))
-		       #:name 'inbound-relay
-		       #:state state
-	      [(cons _ (? eof-object?))
-	       (close-transition state #t)]
-	      [(cons _ (? bytes? bs))
-	       (sequence-actions (adjust-credit state -1)
-				 (send-message (tcp-channel remote-addr local-addr bs)))])]
+	     (name-endpoint 'inbound-relay
+	       (subscribe-to-topic (cons (read-bytes-line-evt cin 'any) (wild))
+		 (match-state state
+		   (on-message
+		    [(cons _ (? eof-object?))
+		     (close-transition state #t)]
+		    [(cons _ (? bytes? bs))
+		     (sequence-actions (adjust-credit state -1)
+				       (send-message (tcp-channel remote-addr local-addr bs)))]))))]
 	    [(bytes)
-	     (endpoint #:subscriber (cons (read-bytes-evt new-credit cin) (wild))
-		       #:name 'inbound-relay
-		       #:state state
-	      [(cons _ (? eof-object?))
-	       (close-transition state #t)]
-	      [(cons _ (? bytes? bs))
-	       (let ((len (bytes-length bs)))
-		 (sequence-actions (adjust-credit state (- len))
-				   (send-message (tcp-channel remote-addr local-addr bs))))])])))))
+	     (name-endpoint 'inbound-relay
+	       (subscribe-to-topic (cons (read-bytes-evt new-credit cin) (wild))
+		 (match-state state
+		   (on-message
+		    [(cons _ (? eof-object?))
+		     (close-transition state #t)]
+		    [(cons _ (? bytes? bs))
+		     (let ((len (bytes-length bs)))
+		       (sequence-actions (adjust-credit state (- len))
+					 (send-message
+					  (tcp-channel remote-addr local-addr bs))))]))))])))))
   (transition (tcp-connection-state 'bytes 0)
-    (endpoint #:subscriber (cons (eof-evt cin) (wild))
-	      #:state state
-     [(cons (? evt?) _)
-      (close-transition state #t)])
-    (endpoint #:subscriber (tcp-channel local-addr remote-addr (wild))
-	      #:state state
-	      #:on-absence (close-transition state #f)
-     [(tcp-channel (== local-addr) (== remote-addr) subpacket)
-      (match subpacket
-	[(? eof-object?) (close-transition state #f)]
-	[(? bytes? bs)
-	 (define len (bytes-length bs))
-	 (write-bytes bs cout)
-	 (flush-output cout)
-	 (transition state (send-tcp-credit local-addr remote-addr len))]
-	[_
-	 (error 'tcp-connection-manager*
-		"Publisher on a channel isn't supposed to issue channel control messages")])])
-    (endpoint #:publisher (tcp-channel remote-addr local-addr (wild))
-	      #:state state
-	      #:on-absence (close-transition state #f)
-     [(tcp-channel (== remote-addr) (== local-addr) subpacket)
-      (match subpacket
-	[(tcp-credit amount)
-	 (if state (adjust-credit state amount) (transition state))]
-	[(tcp-mode new-mode)
-	 ;; Also resets credit to zero.
-	 (if state (adjust-credit (tcp-connection-state new-mode 0) 0) (transition state))]
-	[_
-	 (error 'tcp-connection-manager*
-		"Subscriber on a channel may only send channel control messages")])])))
+    (subscribe-to-topic (cons (eof-evt cin) (wild))
+      (match-state state
+	(on-message
+	 [(cons (? evt?) _)
+	  (close-transition state #t)])))
+    (subscribe-to-topic (tcp-channel local-addr remote-addr (wild))
+      (match-state state
+	(on-absence (close-transition state #f))
+	(on-message
+	 [(tcp-channel (== local-addr) (== remote-addr) subpacket)
+	  (match subpacket
+	    [(? eof-object?) (close-transition state #f)]
+	    [(? bytes? bs)
+	     (define len (bytes-length bs))
+	     (write-bytes bs cout)
+	     (flush-output cout)
+	     (transition state (send-tcp-credit local-addr remote-addr len))]
+	    [_
+	     (error 'tcp-connection-manager*
+		    "Publisher on a channel isn't supposed to issue channel control messages")])])))
+    (publish-on-topic (tcp-channel remote-addr local-addr (wild))
+      (match-state state
+	(on-absence (close-transition state #f))
+	(on-message
+	 [(tcp-channel (== remote-addr) (== local-addr) subpacket)
+	  (match subpacket
+	    [(tcp-credit amount)
+	     (if state (adjust-credit state amount) (transition state))]
+	    [(tcp-mode new-mode)
+	     ;; Also resets credit to zero.
+	     (if state (adjust-credit (tcp-connection-state new-mode 0) 0) (transition state))]
+	    [_
+	     (error 'tcp-connection-manager*
+		    "Subscriber on a channel may only send channel control messages")])])))))
 
 ;; Spawn
 ;; Debugging aid: produces pretty hex dumps of TCP traffic sent on
@@ -271,8 +278,7 @@
        (write `(TCPOTHER ,other)) (newline)
        (void)]))
 
-  (spawn #:debug-name 'tcp-spy
-	 #:child
-	 (transition 'no-state
-	   (endpoint #:subscriber (wild) #:observer [m (display-message m)])
-	   (endpoint #:publisher (wild) #:observer [m (display-message m)]))))
+  (name-process 'tcp-spy
+    (spawn (transition 'no-state
+	     (observe-publishers (wild) (on-message [m (display-message m)]))
+	     (observe-subscribers (wild) (on-message [m (display-message m)]))))))

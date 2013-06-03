@@ -148,18 +148,18 @@
 ;; events and back.
 (: timer-driver : (All (ParentState) -> (Spawn ParentState)))
 (define (timer-driver)
-  (spawn: #:debug-name 'timer-driver
-	  #:parent : ParentState
-	  #:child : DriverState
-	  (transition: (driver-state (make-timer-heap)) : DriverState
-	    (endpoint: state : DriverState
-		       #:subscriber (set-timer-pattern (wild) (wild) (wild))
-		       [(set-timer label msecs 'relative)
-			(install-timer! state label (+ (current-inexact-milliseconds) msecs))]
-		       [(set-timer label msecs 'absolute)
-			(install-timer! state label msecs)])
-	    (endpoint: : DriverState
-		       #:publisher (timer-expired-pattern (wild) (wild))))))
+  (name-process 'timer-driver
+    (spawn: #:parent : ParentState
+	    #:child : DriverState
+	    (transition: (driver-state (make-timer-heap)) : DriverState
+	      (subscribe-to-topic: DriverState (set-timer-pattern (wild) (wild) (wild))
+		(match-state state
+		  (on-message
+		   [(set-timer label msecs 'relative)
+		    (install-timer! state label (+ (current-inexact-milliseconds) msecs))]
+		   [(set-timer label msecs 'absolute)
+		    (install-timer! state label msecs)])))
+	      (publish-on-topic: DriverState (timer-expired-pattern (wild) (wild)))))))
 
 (: install-timer! : DriverState TimerLabel Real -> (Transition DriverState))
 (define (install-timer! state label deadline)
@@ -172,42 +172,44 @@
   (transition: state : DriverState
     (delete-endpoint 'time-listener)
     (and next
-	 (endpoint: state : DriverState
-		    #:subscriber (cons (timer-evt (pending-timer-deadline next)) (wild))
-		    #:name 'time-listener
-		    [(cons (? evt?) (? real? now))
-		     (let ((to-send (fire-timers! (driver-state-heap state) now)))
-		     ;; Note: compute to-send before recursing, because of side-effects on heap
-		       (sequence-actions (transition: state : DriverState)
-					 update-time-listener!
-					 to-send))]))))
+	 (name-endpoint 'time-listener
+	   (subscribe-to-topic: DriverState (cons (timer-evt (pending-timer-deadline next)) (wild))
+	     (match-state state
+	       (on-message
+		[(cons (? evt?) (? real? now))
+		 (let ((to-send (fire-timers! (driver-state-heap state) now)))
+		   ;; Note: compute to-send before recursing, because of side-effects on heap
+		   (sequence-actions (transition: state : DriverState)
+				     update-time-listener!
+				     to-send))])))))))
 
 ;; Process for mapping this-level timer requests to meta-level timer
 ;; requests. Useful when running nested VMs: essentially extends timer
 ;; support up the branches of the VM tree toward the leaves.
 (: timer-relay : (All (ParentState) Symbol -> (Spawn ParentState)))
 (define (timer-relay self-id)
-  (spawn: #:debug-name `(timer-relay ,self-id)
-	  #:parent : ParentState
-	  #:child : RelayState
-	  (transition: (relay-state 0 (make-immutable-hash '())) : RelayState
-	    (at-meta-level
-	     (endpoint: (relay-state next-counter active-timers) : RelayState
-			#:subscriber (timer-expired-pattern (wild) (wild))
-			[(timer-expired (list (== self-id) (? exact-nonnegative-integer? counter))
-					now)
-			 (transition: (relay-state next-counter (hash-remove active-timers counter))
-			     : RelayState
-			   (and (hash-has-key? active-timers counter)
-				(send-message (timer-expired (hash-ref active-timers counter)
-							     now))))]))
-	    (endpoint: (relay-state next-counter active-timers) : RelayState
-		       #:subscriber (set-timer-pattern (wild) (wild) (wild))
-		       [(set-timer label msecs kind)
-			(transition: (relay-state (+ next-counter 1)
-						  (hash-set active-timers next-counter label))
-			    : RelayState
-			  (at-meta-level: : RelayState
-			    (send-message (set-timer (list self-id next-counter) msecs kind))))])
-	    (endpoint: : RelayState
-		       #:publisher (timer-expired-pattern (wild) (wild))))))
+  (name-process `(timer-relay ,self-id)
+    (spawn: #:parent : ParentState
+	    #:child : RelayState
+	    (transition: (relay-state 0 (make-immutable-hash '())) : RelayState
+	      (at-meta-level: RelayState
+		(subscribe-to-topic: RelayState (timer-expired-pattern (wild) (wild))
+		  (match-state (relay-state next-counter active-timers)
+		    (on-message
+		     [(timer-expired (list (== self-id) (? exact-nonnegative-integer? counter))
+				     now)
+		      (transition: (relay-state next-counter (hash-remove active-timers counter))
+			  : RelayState
+			(and (hash-has-key? active-timers counter)
+			     (send-message (timer-expired (hash-ref active-timers counter)
+							  now))))]))))
+	      (subscribe-to-topic: RelayState (set-timer-pattern (wild) (wild) (wild))
+		(match-state (relay-state next-counter active-timers)
+		  (on-message
+		   [(set-timer label msecs kind)
+		    (transition: (relay-state (+ next-counter 1)
+					      (hash-set active-timers next-counter label))
+			: RelayState
+		      (at-meta-level: RelayState
+			(send-message (set-timer (list self-id next-counter) msecs kind))))])))
+	      (publish-on-topic: RelayState (timer-expired-pattern (wild) (wild)))))))

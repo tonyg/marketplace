@@ -4,16 +4,12 @@
 
 (debug
  (nested-vm
-  #:debug-name 'echo
   (at-meta-level
-   (endpoint
-    #:subscriber (tcp-channel ? (tcp-listener 5999) ?)
-    #:observer
-    #:conversation (tcp-channel them us _)
-    #:on-presence
-    (debug
-     (spawn #:debug-name (list 'session them)
-	    #:child (chat-session them us)))))))
+   (observe-publishers (tcp-channel ? (tcp-listener 5999) ?)
+     (match-conversation (tcp-channel them us _)
+       (on-presence
+	(debug (name-process (list 'session them)
+		 (spawn (chat-session them us))))))))))
 
 (define (chat-session them us)
   (define user (gensym 'user))
@@ -23,12 +19,13 @@
 
 (define (listen-to-user user them us)
   (list
-   (endpoint #:publisher `(,user says ,?))
+   (publish-on-topic `(,user says ,?))
    (at-meta-level
-    (endpoint #:subscriber (tcp-channel them us ?)
-              #:on-absence (quit)
-              [(tcp-channel _ _ (? bytes? text))
-               (send-message `(,user says ,text))]))))
+    (subscribe-to-topic (tcp-channel them us ?)
+      (on-absence (quit))
+      (on-message
+       [(tcp-channel _ _ (? bytes? text))
+        (send-message `(,user says ,text))])))))
 
 (define (speak-to-user user them us)
   (define (say fmt . args)
@@ -41,9 +38,10 @@
   (list
    (say "You are ~s.~n" user)
    (at-meta-level
-    (endpoint #:publisher (tcp-channel us them ?)))
-   (endpoint #:subscriber `(,? says ,?)
-     #:conversation `(,who says ,_)
-     #:on-presence (announce who 'arrived)
-     #:on-absence  (announce who 'departed)
-     [`(,who says ,what) (say "~a: ~a" who what)])))
+    (publish-on-topic (tcp-channel us them ?)))
+   (subscribe-to-topic `(,? says ,?)
+     (match-conversation `(,who says ,_)
+       (on-presence (announce who 'arrived))
+       (on-absence  (announce who 'departed))
+       (on-message [`(,who says ,what)
+                    (say "~a: ~a" who what)])))))

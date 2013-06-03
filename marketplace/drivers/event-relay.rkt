@@ -7,27 +7,24 @@
 
 (: event-relay : (All (ParentState) Symbol -> (Spawn ParentState)))
 (define (event-relay self-id)
-  (spawn: #:debug-name `(event-relay ,self-id)
-	  #:parent : ParentState
-	  #:child : Void
-	  (transition/no-state
-	    (endpoint: : Void
-		       #:publisher (cons ? ?) #:observer
-		       #:conversation (cons (? evt? e) _)
-		       #:on-presence (begin
-				       (printf "SUBSCRIBED ~v~n" e)
-				       (flush-output)
-				       (at-meta-level
-					(endpoint: : Void
-						   #:subscriber (cons e ?)
-						   #:name `(event-relay ,self-id ,e)
-						   [msg
-						    (begin
-						      (printf "FIRED ~v -> ~v~n" e msg)
-						      (flush-output)
-						      (send-message msg))])))
-		       #:on-absence (begin
-				      (printf "UNSUBSCRIBED ~v~n" e)
-				      (flush-output)
-				      (at-meta-level
-				       (delete-endpoint `(event-relay ,self-id ,e))))))))
+  (name-process `(event-relay ,self-id)
+    (spawn: #:parent : ParentState
+	    #:child : Void
+	    (transition/no-state
+	      (observe-publishers: Void (cons ? ?)
+		(match-conversation (cons (? evt? e) _)
+		  (on-presence (begin
+				 (printf "SUBSCRIBED ~v~n" e)
+				 (flush-output)
+				 (at-meta-level: Void
+				   (name-endpoint `(event-relay ,self-id ,e)
+				     (subscribe-to-topic: Void (cons e ?)
+				       (on-message
+					[msg (begin (printf "FIRED ~v -> ~v~n" e msg)
+						    (flush-output)
+						    (send-message msg))]))))))
+		  (on-absence (begin
+				(printf "UNSUBSCRIBED ~v~n" e)
+				(flush-output)
+				(at-meta-level: Void
+				  (delete-endpoint `(event-relay ,self-id ,e)))))))))))
