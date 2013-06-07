@@ -37,12 +37,6 @@
 
 (define (listen-to-user user them us)
   (list
-   (add-endpoint 'speech-publisher
-		 (role 'publisher
-		       `(,user says ,?)
-		       'participant)
-		 (lambda (event)
-		   (lambda (state) (transition state '()))))
    (at-meta-level
     (add-endpoint 'tcp-receiver
 		  (role 'subscriber
@@ -56,7 +50,13 @@
 		    (lambda (state)
 		      (transition state (send-message `(,user says ,text) 'publisher)))]
 		   [_
-		    (lambda (state) (transition state '()))])))))
+		    (lambda (state) (transition state '()))])))
+   (add-endpoint 'speech-publisher
+		 (role 'publisher
+		       `(,user says ,?)
+		       'participant)
+		 (lambda (event)
+		   (lambda (state) (transition state '()))))))
 
 (define (speak-to-user user them us)
   (define (say fmt . args)

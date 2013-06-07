@@ -17,13 +17,13 @@
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (listen-to-user user them us)
   (list
-   (publish-on-topic `(,user says ,?))
    (at-meta-level
     (subscribe-to-topic (tcp-channel them us ?)
       (on-absence (quit))
       (on-message
        [(tcp-channel _ _ (? bytes? text))
-        (send-message `(,user says ,text))])))))
+        (send-message `(,user says ,text))])))
+   (publish-on-topic `(,user says ,?))))
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
 (define (speak-to-user user them us)
