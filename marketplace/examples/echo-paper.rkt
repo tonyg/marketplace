@@ -1,6 +1,6 @@
 #lang marketplace
 
-(subscribe-to-topic (tcp-channel ? (tcp-listener 5999) ?)
+(observe-publishers (tcp-channel ? (tcp-listener 5999) ?)
   (match-conversation (tcp-channel from to _)
     (on-presence (spawn (echoer from to)))))
 
