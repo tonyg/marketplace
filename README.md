@@ -1,37 +1,56 @@
-# From Functional I/O to Functional Systems Programming
+# Marketplace: Bringing the Network into the Programming Language
 
-Support code for ICFP submission.
+Marketplace is a concurrent language able to express communication,
+enforce isolation, and manage resources. Network-inspired extensions
+to a functional core represent imperative actions as values, giving
+side-effects locality and enabling composition of communicating
+processes.
+
+Collaborating programs are grouped within task-specific *virtual
+machines* (VMs) to scope their interactions. Conversations between
+programs are multi-party (using a publish/subscribe medium), and
+programs can easily participate in many such conversations at once.
+
+Marketplace makes *presence* notifications an integral part of
+pub/sub. Programs react to presence and absence notifications that
+report the comings and goings of their peers. Presence serves to
+communicate changes in demand for and supply of services, both within
+a VM and across *nested VM layers*. Programs can give up
+responsibility for maintaining presence information and for scoping
+group communications to their containing VM.
+
+## Documentation
 
 A (draft) manual for Marketplace is available
 [here](http://tonyg.github.io/marketplace/).
 
-This is a [Racket](http://racket-lang.org/) package containing a
-single
+## The code
+
+This repository contains a [Racket](http://racket-lang.org/) package
+containing a single
 [collection](http://docs.racket-lang.org/reference/collects.html),
 `marketplace`, which includes
 
- - the implementation of the `#lang marketplace` language from the
-   paper, in
+ - the implementation of the `#lang marketplace` language, in
    [`marketplace/`](https://github.com/tonyg/marketplace/tree/master/marketplace/).
 
- - the echo server example from the paper, in
+ - a TCP echo server example, in
    [`marketplace/examples/echo-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/echo-paper.rkt).
 
- - the chat server example from the paper, in
+ - a TCP chat server example, in
    [`marketplace/examples/chat-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/chat-paper.rkt).
 
- - the Haskell, Erlang and Python implementations of the chat server
-   from the paper, in
+ - Haskell, Erlang and Python implementations of the chat server for comparison, in
    [`marketplace/examples/chat.hs`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/chat.hs),
    [`chat.erl`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/chat.erl),
    and
    [`chat.py`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/chat.py)
    respectively.
 
-## How to compile and run the code
+## Compiling and running the code
 
 You will need the latest **prerelease** version of Racket. Any version
-newer than or equal to Racket 5.3.3.7 should work. Nightly-build
+newer than or equal to Racket 5.3.4.11 should work. Nightly-build
 installers for Racket can be downloaded
 [here](http://pre.racket-lang.org/installers/).
 
