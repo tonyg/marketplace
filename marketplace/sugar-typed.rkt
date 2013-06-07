@@ -28,7 +28,7 @@
 	 name-process
 	 yield:
 	 at-meta-level:
-	 nested-vm:
+	 spawn-vm:
 	 ground-vm:)
 
 ;; A fresh unification variable, as identifier-syntax.
@@ -88,7 +88,7 @@
       [(_ State preaction ...)
        #'(list ((inst core:at-meta-level State) preaction) ...)])))
 
-(define-syntax nested-vm:
+(define-syntax spawn-vm:
   (lambda (stx)
     (syntax-parse stx
       [(_ (~literal :) ParentState

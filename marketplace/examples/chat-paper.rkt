@@ -1,7 +1,7 @@
 #lang marketplace
 
 ;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;;
-(nested-vm
+(spawn-vm
  (at-meta-level
   (observe-publishers (tcp-channel ? (tcp-listener 5999) ?)
     (match-conversation (tcp-channel them us _)

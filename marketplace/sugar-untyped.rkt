@@ -26,7 +26,7 @@
 	 name-process
 	 yield
 	 at-meta-level
-	 nested-vm
+	 spawn-vm
 	 ground-vm)
 
 (define-syntax-rule (transition/no-state action ...)
@@ -70,7 +70,7 @@
     [(cons preaction '()) (core:at-meta-level preaction)]
     [_ (map core:at-meta-level preactions)]))
 
-(define-syntax nested-vm
+(define-syntax spawn-vm
   (lambda (stx)
     (syntax-parse stx
       [(_ (~or (~optional (~seq #:vm-pid vm-pid) #:defaults ([vm-pid #'p0])
