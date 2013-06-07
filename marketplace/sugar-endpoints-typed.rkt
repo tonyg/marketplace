@@ -15,8 +15,8 @@
 	 observe-subscribers/everything:
 	 observe-publishers:
 	 observe-publishers/everything:
-	 publish-on-topic:
-	 subscribe-to-topic:
+	 publisher:
+	 subscriber:
 	 build-endpoint:)
 
 (define&provide-dsl-helper-syntaxes "endpoint definition context"
@@ -73,13 +73,13 @@
 		   (core:role 'subscriber (cast topic core:Topic) 'everything)
 		   clause ...))
 
-(define-syntax-rule (publish-on-topic: State topic clause ...)
+(define-syntax-rule (publisher: State topic clause ...)
   (build-endpoint: State
 		   (gensym 'anonymous-endpoint)
 		   (core:role 'publisher (cast topic core:Topic) 'participant)
 		   clause ...))
 
-(define-syntax-rule (subscribe-to-topic: State topic clause ...)
+(define-syntax-rule (subscriber: State topic clause ...)
   (build-endpoint: State
 		   (gensym 'anonymous-endpoint)
 		   (core:role 'subscriber (cast topic core:Topic) 'participant)
@@ -247,8 +247,8 @@
 ;;; eval: (put 'observe-subscribers/everything: 'scheme-indent-function 2)
 ;;; eval: (put 'observe-publishers: 'scheme-indent-function 2)
 ;;; eval: (put 'observe-publishers/everything: 'scheme-indent-function 2)
-;;; eval: (put 'publish-on-topic: 'scheme-indent-function 2)
-;;; eval: (put 'subscribe-to-topic: 'scheme-indent-function 2)
+;;; eval: (put 'publisher: 'scheme-indent-function 2)
+;;; eval: (put 'subscriber: 'scheme-indent-function 2)
 ;;; eval: (put 'match-state 'scheme-indent-function 1)
 ;;; eval: (put 'match-orientation 'scheme-indent-function 1)
 ;;; eval: (put 'match-conversation 'scheme-indent-function 1)

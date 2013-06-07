@@ -19,9 +19,9 @@
 
 (define (listen-to-user user them us)
   (list
-   (publish-on-topic `(,user says ,?))
+   (publisher `(,user says ,?))
    (at-meta-level
-    (subscribe-to-topic (tcp-channel them us ?)
+    (subscriber (tcp-channel them us ?)
       (on-absence (quit))
       (on-message
        [(tcp-channel _ _ (? bytes? text))
@@ -38,8 +38,8 @@
   (list
    (say "You are ~s.~n" user)
    (at-meta-level
-    (publish-on-topic (tcp-channel us them ?)))
-   (subscribe-to-topic `(,? says ,?)
+    (publisher (tcp-channel us them ?)))
+   (subscriber `(,? says ,?)
      (match-conversation `(,who says ,_)
        (on-presence (announce who 'arrived))
        (on-absence  (announce who 'departed))

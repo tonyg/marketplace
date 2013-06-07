@@ -162,7 +162,7 @@
       (match-state state
 	(match-conversation c
 	  (on-absence (handle-absence 'subscriber c state)))))
-    (subscribe-to-topic (cons (tcp:tcp-accept-evt listener) (wild))
+    (subscriber (cons (tcp:tcp-accept-evt listener) (wild))
       (on-message
        [(cons _ (list cin cout))
 	(let-values (((local-hostname local-port remote-hostname remote-port)
@@ -200,7 +200,7 @@
 	  (case (tcp-connection-state-mode state)
 	    [(lines)
 	     (name-endpoint 'inbound-relay
-	       (subscribe-to-topic (cons (read-bytes-line-evt cin 'any) (wild))
+	       (subscriber (cons (read-bytes-line-evt cin 'any) (wild))
 		 (match-state state
 		   (on-message
 		    [(cons _ (? eof-object?))
@@ -210,7 +210,7 @@
 				       (send-message (tcp-channel remote-addr local-addr bs)))]))))]
 	    [(bytes)
 	     (name-endpoint 'inbound-relay
-	       (subscribe-to-topic (cons (read-bytes-evt new-credit cin) (wild))
+	       (subscriber (cons (read-bytes-evt new-credit cin) (wild))
 		 (match-state state
 		   (on-message
 		    [(cons _ (? eof-object?))
@@ -221,12 +221,12 @@
 					 (send-message
 					  (tcp-channel remote-addr local-addr bs))))]))))])))))
   (transition (tcp-connection-state 'bytes 0)
-    (subscribe-to-topic (cons (eof-evt cin) (wild))
+    (subscriber (cons (eof-evt cin) (wild))
       (match-state state
 	(on-message
 	 [(cons (? evt?) _)
 	  (close-transition state #t)])))
-    (subscribe-to-topic (tcp-channel local-addr remote-addr (wild))
+    (subscriber (tcp-channel local-addr remote-addr (wild))
       (match-state state
 	(on-absence (close-transition state #f))
 	(on-message
@@ -241,7 +241,7 @@
 	    [_
 	     (error 'tcp-connection-manager*
 		    "Publisher on a channel isn't supposed to issue channel control messages")])])))
-    (publish-on-topic (tcp-channel remote-addr local-addr (wild))
+    (publisher (tcp-channel remote-addr local-addr (wild))
       (match-state state
 	(on-absence (close-transition state #f))
 	(on-message

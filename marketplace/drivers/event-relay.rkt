@@ -18,7 +18,7 @@
 				 (flush-output)
 				 (at-meta-level: Void
 				   (name-endpoint `(event-relay ,self-id ,e)
-				     (subscribe-to-topic: Void (cons e ?)
+				     (subscriber: Void (cons e ?)
 				       (on-message
 					[msg (begin (printf "FIRED ~v -> ~v~n" e msg)
 						    (flush-output)

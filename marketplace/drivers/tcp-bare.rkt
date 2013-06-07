@@ -108,7 +108,7 @@
       (match-state state
 	(match-conversation c
 	  (on-absence (handle-absence 'subscriber c state)))))
-    (subscribe-to-topic (cons (tcp:tcp-accept-evt listener) (wild))
+    (subscriber (cons (tcp:tcp-accept-evt listener) (wild))
       (on-message
        [(cons _ (list cin cout))
 	(let-values (((local-hostname local-port remote-hostname remote-port)
@@ -151,16 +151,16 @@
       (quit)))
 
   (transition #t ;; open
-    (subscribe-to-topic (cons (read-bytes-avail-evt 4096 cin) (wild))
+    (subscriber (cons (read-bytes-avail-evt 4096 cin) (wild))
       (match-state is-open
 	(on-message
 	 [(cons _ (? eof-object?)) (close-transition is-open #t)]
 	 [(cons _ (? bytes? bs)) (transition is-open
 				   (send-message (tcp-channel remote-addr local-addr bs)))])))
-    (subscribe-to-topic (cons (eof-evt cin) (wild))
+    (subscriber (cons (eof-evt cin) (wild))
       (match-state is-open
 	(on-message [(cons (? evt?) _) (close-transition is-open #t)])))
-    (subscribe-to-topic (tcp-channel local-addr remote-addr (wild))
+    (subscriber (tcp-channel local-addr remote-addr (wild))
       (match-state is-open
 	(on-absence (close-transition is-open #f))
 	(on-message
@@ -173,6 +173,6 @@
 	    [(? bytes? bs) (begin (write-bytes bs cout)
 				  (flush-output cout)
 				  (transition is-open))])])))
-    (publish-on-topic (tcp-channel remote-addr local-addr (wild))
+    (publisher (tcp-channel remote-addr local-addr (wild))
       (match-state is-open
 	(on-absence (close-transition is-open #f))))))

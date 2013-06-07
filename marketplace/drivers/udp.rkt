@@ -201,17 +201,17 @@
 	    (transition: #t : SocketManagerState
 	      ;; Offers a handle-mapping on the local network so that
 	      ;; the driver/factory can clean up when this process dies.
-	      (publish-on-topic: SocketManagerState (handle-mapping local-addr s))
+	      (publisher: SocketManagerState (handle-mapping local-addr s))
 	      ;; If our counterparty removes either of their endpoints
 	      ;; as the subscriber end of the remote-to-local stream or
 	      ;; the publisher end of the local-to-remote stream, shut
 	      ;; ourselves down. Also, relay messages published on the
 	      ;; local-to-remote stream out on the actual socket.
-	      (publish-on-topic: SocketManagerState
+	      (publisher: SocketManagerState
 		  (udp-packet-pattern any-remote local-addr (wild))
 		(match-state socket-is-open?
 		  (on-absence (handle-absence socket-is-open?))))
-	      (subscribe-to-topic: SocketManagerState
+	      (subscriber: SocketManagerState
 		  (udp-packet-pattern local-addr any-remote (wild))
 		(match-state socket-is-open?
 		  (on-absence (handle-absence socket-is-open?))
@@ -223,7 +223,7 @@
 			   (transition: socket-is-open? : SocketManagerState))])))
 	      ;; Listen for messages arriving on the actual socket using
 	      ;; a ground event, and relay them at this level.
-	      (subscribe-to-topic: SocketManagerState (cons (udp-receive!-evt s buffer) (wild))
+	      (subscriber: SocketManagerState (cons (udp-receive!-evt s buffer) (wild))
 		(on-message
 		 [(cons (? evt?) (list (? exact-integer? packet-length)
 				       (? string? remote-host)

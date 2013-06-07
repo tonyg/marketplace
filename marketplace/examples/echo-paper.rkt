@@ -6,7 +6,7 @@
 
 (define (echoer from to)
   (transition stateless
-    (subscribe-to-topic (tcp-channel from to ?)
+    (subscriber (tcp-channel from to ?)
       (on-absence (quit))
       (on-message
        [(tcp-channel _ _ data)

@@ -152,14 +152,14 @@
     (spawn: #:parent : ParentState
 	    #:child : DriverState
 	    (transition: (driver-state (make-timer-heap)) : DriverState
-	      (subscribe-to-topic: DriverState (set-timer-pattern (wild) (wild) (wild))
+	      (subscriber: DriverState (set-timer-pattern (wild) (wild) (wild))
 		(match-state state
 		  (on-message
 		   [(set-timer label msecs 'relative)
 		    (install-timer! state label (+ (current-inexact-milliseconds) msecs))]
 		   [(set-timer label msecs 'absolute)
 		    (install-timer! state label msecs)])))
-	      (publish-on-topic: DriverState (timer-expired-pattern (wild) (wild)))))))
+	      (publisher: DriverState (timer-expired-pattern (wild) (wild)))))))
 
 (: install-timer! : DriverState TimerLabel Real -> (Transition DriverState))
 (define (install-timer! state label deadline)
@@ -173,7 +173,7 @@
     (delete-endpoint 'time-listener)
     (and next
 	 (name-endpoint 'time-listener
-	   (subscribe-to-topic: DriverState (cons (timer-evt (pending-timer-deadline next)) (wild))
+	   (subscriber: DriverState (cons (timer-evt (pending-timer-deadline next)) (wild))
 	     (match-state state
 	       (on-message
 		[(cons (? evt?) (? real? now))
@@ -193,7 +193,7 @@
 	    #:child : RelayState
 	    (transition: (relay-state 0 (make-immutable-hash '())) : RelayState
 	      (at-meta-level: RelayState
-		(subscribe-to-topic: RelayState (timer-expired-pattern (wild) (wild))
+		(subscriber: RelayState (timer-expired-pattern (wild) (wild))
 		  (match-state (relay-state next-counter active-timers)
 		    (on-message
 		     [(timer-expired (list (== self-id) (? exact-nonnegative-integer? counter))
@@ -203,7 +203,7 @@
 			(and (hash-has-key? active-timers counter)
 			     (send-message (timer-expired (hash-ref active-timers counter)
 							  now))))]))))
-	      (subscribe-to-topic: RelayState (set-timer-pattern (wild) (wild) (wild))
+	      (subscriber: RelayState (set-timer-pattern (wild) (wild) (wild))
 		(match-state (relay-state next-counter active-timers)
 		  (on-message
 		   [(set-timer label msecs kind)
@@ -212,4 +212,4 @@
 			: RelayState
 		      (at-meta-level: RelayState
 			(send-message (set-timer (list self-id next-counter) msecs kind))))])))
-	      (publish-on-topic: RelayState (timer-expired-pattern (wild) (wild)))))))
+	      (publisher: RelayState (timer-expired-pattern (wild) (wild)))))))
