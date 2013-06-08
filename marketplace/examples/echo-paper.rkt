@@ -6,6 +6,7 @@
 
 (define (echoer from to)
   (transition stateless
+    (publisher (tcp-channel to from ?))
     (subscriber (tcp-channel from to ?)
       (on-absence (quit))
       (on-message
