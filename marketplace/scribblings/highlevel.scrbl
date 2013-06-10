@@ -2,10 +2,6 @@
 @require[racket/include]
 @include{prelude.inc}
 
-@require[(for-label (except-in marketplace/sugar-untyped transition/no-state)
-		    (only-in marketplace/drivers/tcp-bare tcp)
-		    (except-in marketplace/sugar-typed ?))]
-
 @title[#:tag "high-level-interface"]{High-level interface}
 
 @declare-exporting[#:use-sources (marketplace/sugar-values
