@@ -75,4 +75,6 @@
 		    (cons actions more-actions)
 		    remaining-items)]))])))
 
+;;; Local Variables:
 ;;; eval: (put 'sequence-actions 'scheme-indent-function 1)
+;;; End:
