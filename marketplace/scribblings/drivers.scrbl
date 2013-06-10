@@ -130,14 +130,15 @@ Choose a @racket[tcp-handle], and then create endpoints as follows:
 (let ((local (tcp-handle 'some-unique-value))
       (remote (tcp-address "the.remote.host.example.com" 5999)))
   (transition/no-state
-   (endpoint #:publisher (tcp-channel local remote ?))
-   (endpoint #:subscriber (tcp-channel remote local ?)
-	     [(tcp-channel _ _ (? eof-object?))
-	      (code:comment "Handle a received end-of-file object")
-	      (transition ...)]
-	     [(tcp-channel _ _ (? bytes? data))
-	      (code:comment "Handle received data")
-	      (transition ...)])))
+   (publisher (tcp-channel local remote ?))
+   (subscriber (tcp-channel remote local ?)
+     (on-message
+      [(tcp-channel _ _ (? eof-object?))
+       (code:comment "Handle a received end-of-file object")
+       (transition ...)]
+      [(tcp-channel _ _ (? bytes? data))
+       (code:comment "Handle received data")
+       (transition ...)]))))
 ]
 
 The TCP driver will automatically create an outbound connection in
@@ -153,18 +154,18 @@ Choose a port number, and then create an @emph{observer} endpoint as
 follows:
 
 @racketblock[
-(endpoint #:subscriber (tcp-channel ? (tcp-listener 5999) ?) #:observer
-	  #:conversation (tcp-channel them us _)
-	  #:on-presence (spawn #:child (chat-session them us)))
+(observe-publishers (tcp-channel ? (tcp-listener 5999) ?)
+  (match-conversation (tcp-channel them us _)
+    (on-presence (spawn (chat-session them us)))))
 ]
 
-The use of @racket[#:observer] here indicates that this endpoint isn't
+The use of @racket[observe-publishers] here indicates that this endpoint isn't
 actually interested in exchanging any TCP data; instead, it is
-monitoring demand for such exchanges. The TCP driver uses a rare
-@racket[#:everything] endpoint to monitor the presence of
-@racket[#:observer]s, and creates listening TCP server sockets in
+monitoring demand for such exchanges. The TCP driver uses the unusual
+@racket['everything] @racket[InterestType] to monitor the presence of
+@racket['observer]s, and creates listening TCP server sockets in
 response. When a connection comes in, the TCP driver spawns a manager
-process which offers regular @racket[#:participant] endpoints for
+process which offers regular @racket['participant] endpoints for
 communicating on the newly-arrived socket.
 
 To illustrate the code for handling a newly-arrived connection,
@@ -172,11 +173,11 @@ To illustrate the code for handling a newly-arrived connection,
 @racketblock[
 (define (chat-session them us)
   (transition/no-state
-   (endpoint #:subscriber (tcp-channel them us ?)
-	     #:on-absence (quit)
-	     [(tcp-channel _ _ (? bytes? data))
-	      (code:comment "Handle incoming data")
-	      (transition ...)])))
+   (subscriber (tcp-channel them us ?)
+     (on-absence (quit))
+     (on-message [(tcp-channel _ _ (? bytes? data))
+		  (code:comment "Handle incoming data")
+		  (transition ...)]))))
 ]
 
 @subsection{Receiving data}

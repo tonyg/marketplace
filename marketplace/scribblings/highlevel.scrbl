@@ -77,11 +77,10 @@ start any drivers they need; for example, the file
 @racket[tcp] and an initial @racket[endpoint] action:
 
 @racketblock[
-(ground-vm
-  tcp
-  (endpoint #:subscriber (tcp-channel ? (tcp-listener 5999) ?)
-	    #:conversation (tcp-channel from to _)
-	    #:on-presence (spawn #:child (echoer from to))))
+(ground-vm tcp
+           (subscriber (tcp-channel ? (tcp-listener 5999) ?)
+             (match-conversation (tcp-channel from to _)
+               (on-presence (spawn (echoer from to))))))
 ]
 
 @deftogether[(
@@ -241,139 +240,106 @@ produces the equivalent of
 
 The primitive action that creates new endpoints is
 @racket[add-endpoint], but because endpoints are the most flexible and
-complex point of interaction between a process and its VM, a DSL,
-@racket[endpoint], streamlines endpoint setup.
+complex point of interaction between a process and its VM, a
+collection of macros helps streamline endpoint setup.
 
 @deftogether[(
-@defform[(endpoint orientation topic maybe-interest-type
-		   maybe-let-name
-		   maybe-name
-		   maybe-state-pattern
-		   maybe-on-presence
-		   maybe-on-absence
-		   maybe-role-patterns
-		   maybe-reason-pattern
-		   maybe-message-handlers)]
-@defform[#:literals (:)
-	 (endpoint: maybe-typed-state-pattern : State
-		    orientation topic maybe-interest-type
-		    maybe-let-name
-		    maybe-name
-		    maybe-on-presence
-		    maybe-on-absence
-		    maybe-role-patterns
-		    maybe-reason-pattern
-		    maybe-message-handlers)
+@defform[(publisher topic handler ...)]
+@defform[(publisher: State topic handler ...)]
+@defform[(subscriber topic handler ...)]
+@defform[(subscriber: State topic handler ...)]
+@defform[(observe-subscribers topic handler ...)]
+@defform[(observe-subscribers: State topic handler ...)]
+@defform[(observe-publishers topic handler ...)]
+@defform[(observe-publishers: State topic handler ...)]
+@defform[(observe-subscribers/everything topic handler ...)]
+@defform[(observe-subscribers/everything: State topic handler ...)]
+@defform[(observe-publishers/everything topic handler ...)]
+@defform[(observe-publishers/everything: State topic handler ...)]
+@defform[(build-endpoint pre-eid role handler ...)]
+@defform[(build-endpoint: State pre-eid role handler ...)
 	 #:grammar
-	 [(maybe-typed-state-pattern (code:line)
-				     (code:line pattern))
-	  (orientation #:subscriber
-		       #:publisher)
-	  (topic expr)
-	  (maybe-interest-type (code:line)
-			       #:participant
-			       #:observer
-			       #:everything)
-	  (maybe-let-name (code:line)
-			  (code:line #:let-name identifier))
-	  (maybe-name (code:line)
-		      (code:line #:name expr))
-	  (maybe-state-pattern (code:line)
-			       (code:line #:state pattern))
-	  (maybe-on-presence (code:line)
-			     (code:line #:on-presence handler-expr))
-	  (maybe-on-absence (code:line)
-			    (code:line #:on-absence handler-expr))
-	  (maybe-role-patterns (code:line)
-			       (code:line #:role pattern)
-			       (code:line #:peer-orientation pattern
-					  #:conversation pattern
-					  #:peer-interest-type pattern))
-	  (maybe-reason-pattern (code:line)
-				(code:line #:reason pattern))
-	  (maybe-message-handlers (code:line)
-				  (code:line message-handler ...))
-	  (message-handler [pattern handler-expr])
-	  (handler-expr expr)]]
+	 [(handler unfiltered-handler
+		   (match-state pattern handler ...)
+		   (match-orientation pattern handler ...)
+		   (match-conversation pattern handler ...)
+		   (match-interest-type pattern handler ...)
+		   (match-reason pattern handler ...))
+	  (unfiltered-handler (on-presence expr ...)
+			      (on-absence expr ...)
+			      (on-message [pattern expr ...] ...))]]
 )]{
 
-Almost everything is optional in an @racket[endpoint]. The only
-mandatory parts are the orientation and the topic. For
-@racket[endpoint:], the expected type of the process state must also
-be supplied.
+The many variations on the core
+@racket[build-endpoint]/@racket[build-endpoint:] form exist to give
+good control over @racket[InterestType] in the endpoint under
+construction;
+see @secref{participating-vs-observing}.
+
+Almost everything is optional in an endpoint definition. The only
+mandatory part is the topic, unless you're using Typed Racket, in
+which case the process state type must also be specified.
 
 For example, a minimal endpoint subscribing to all messages would be:
 
-@racketblock[(endpoint #:subscriber ?)]
+@racketblock[(subscriber ?)]
 
 or in Typed Racket, for a process with @racket[Integer] as its process
 state type,
 
-@racketblock[(endpoint: : Integer #:subscriber ?)]
+@racketblock[(subscriber: Integer ?)]
 
 A minimal publishing endpoint would be:
 
-@racketblock[(endpoint #:publisher ?)
-	     (endpoint: : Integer #:publisher ?)]
+@racketblock[(publisher ?)
+	     (publisher: Integer ?)]
 
 While topic patterns are ordinary Racket data with embedded @racket[?]
 wildcards (see @secref{messages-and-topics}), all the other patterns
-in an @racket[endpoint] are @racket[match]-patterns. In particular
+in an endpoint definition are @racket[match]-patterns. In particular
 note that @racket[?] is a wildcard in a topic pattern, while
 @racket[_] is a wildcard in a @racket[match]-pattern.
 
 @subsection{Receiving messages}
 
-Supply one or more @racket[message-handler] clauses to handle incoming
-message events (as distinct from presence- or absence-events).
+Supply an @racket[on-message] handler clause to an endpoint definition
+to handle incoming message events (as distinct from presence- or
+absence-events).
 
 The following endpoint @emph{subscribes} to all messages, but only
 @emph{handles} some of them:
 
-@racketblock[(endpoint #:subscriber ?
-		       ['ping (send-message 'pong)]
-		       ['hello (list (send-message 'goodbye)
-				     (quit))])]
+@racketblock[(subscriber ?
+	       (on-message
+		['ping (send-message 'pong)]
+		['hello (list (send-message 'goodbye)
+			      (quit))]))]
 
 @subsection{Action-only vs. State updates}
 
-If @racket[#:state] occurs in an @racket[endpoint], or the
-@racket[maybe-typed-state-pattern] occurs in an @racket[endpoint:],
-then all the @racket[handler-expr]s in that endpoint are expected to
-return @seclink["constructing-transitions"]{transition structures}.
+If a group of handlers is wrapped in @racket[match-state], then all
+the wrapped handlers are expected to return
+@seclink["constructing-transitions"]{transition structures}.
 
-If not, however, the event handler expressions are expected to return
-plain @racket[ActionTree]s.
+If not, however, the handler expressions are expected to return plain
+@racket[ActionTree]s.
 
-This way, simple endpoints that do not need to examine the process
+This way, simple handlers that do not need to examine the process
 state, and simply act in response to whichever event triggered them,
 can be written without the clutter of threading the process state
 value through the code.
 
 For example, a simple endpoint could be written either as
 
-@racketblock[(endpoint #:subscriber 'ping
-		       ['ping (send-message 'pong)])]
+@racketblock[(subscriber 'ping
+	       (on-message ['ping (send-message 'pong)]))]
 
 or, explicitly accessing the endpoint's process's state,
 
-@racketblock[(endpoint #:subscriber 'ping
-		       #:state old-state
-		       ['ping (transition old-state
-				(send-message 'pong))])]
-
-@subsection[#:tag "naming-endpoints"]{Naming endpoints}
-
-Endpoint names can be used to @seclink["updating-endpoints"]{update}
-or @seclink["deleting-endpoints"]{delete} endpoints.
-
-If @racket[#:name] is supplied, the given value is used as the name of
-the endpoint. If not, a fresh name is created. (At present,
-@racket[gensym] is used.)
-
-If @racket[#:let-name] is supplied, the given identifier is bound in
-the @racket[handler-expr]s to the name of the endpoint. If not, the
-name of the endpoint is inaccessible to the @racket[handler-expr]s.
+@racketblock[(subscriber 'ping
+	       (match-state old-state
+		 (on-message ['ping (transition old-state
+				      (send-message 'pong))])))]
 
 @subsection{Handling presence and absence events}
 
@@ -383,37 +349,39 @@ endpoints come and go, presence and absence events are generated in
 the current endpoint.
 
 By default, no actions are taken on such events, but
-@racket[#:on-presence] and @racket[#:on-absence] override this
+@racket[on-presence] and @racket[on-absence] handlers override this
 behaviour.
 
 For example, say process A establishes the following endpoint:
 
-@racketblock[(endpoint #:subscriber 'ping
-		       #:on-presence (send-message 'pinger-arrived)
-		       #:on-absence  (send-message 'pinger-departed)
-		       ['ping (send-message 'pong)])]
+@racketblock[(subscriber 'ping
+	       (on-presence (send-message 'pinger-arrived))
+	       (on-absence  (send-message 'pinger-departed))
+	       (on-message ['ping (send-message 'pong)]))]
 
 Some time later, process B takes the following endpoint-establishing
 action:
 
-@racketblock[(endpoint #:publisher 'ping
-		       #:let-name ping-endpoint-name
-		       #:on-presence
-		       (list (endpoint #:subscriber 'pong
-				       #:let-name pong-waiter-name
-				       ['pong (list (delete-endpoint ping-endpoint-name)
-						    (delete-endpoint pong-waiter-name))])
-			     (send-message 'ping)))]
+@racketblock[(let-fresh (ping-endpoint-name pong-waiter-name)
+	       (name-endpoint ping-endpoint-name
+		 (publisher 'ping
+		   (on-presence
+		    (list (name-endpoint pong-waiter-name
+			    (subscriber 'pong
+			      (on-message
+			       ['pong (list (delete-endpoint ping-endpoint-name)
+					    (delete-endpoint pong-waiter-name))])))
+			  (send-message 'ping))))))]
 
 The sequence of events will be:
 
 @itemlist[
 
-  @item{Process A's @racket[#:on-presence] handler will run, and the
+  @item{Process A's @racket[on-presence] handler will run, and the
   @racket['pinger-arrived] message will be sent. At the same
   time,@note{In the current implementation, one happens before the
   other, but it is nondeterministic which is run first.} process B's
-  @racket[#:on-presence] handler runs, installing a second endpoint
+  @racket[on-presence] handler runs, installing a second endpoint
   and sending the @racket['ping] message.}
 
   @item{Process A's endpoint receives the @racket['ping] message, and
@@ -422,7 +390,7 @@ The sequence of events will be:
   @item{Process B's second endpoint receives the @racket['pong]
   message, and deletes both of process B's endpoints.}
 
-  @item{The @racket[#:on-absence] handler in process A runs, sending
+  @item{The @racket[on-absence] handler in process A runs, sending
   the @racket['pinger-departed] message.}
 
 #:style 'ordered]
@@ -435,7 +403,7 @@ One possible trace of messages in the VM containing processes A and B is
 	     'pinger-departed]
 
 By sending the @racket['ping] message @emph{only} once the
-@racket[#:on-presence] handler has fired, process B ensures that
+@racket[on-presence] handler has fired, process B ensures that
 someone is listening for pings.
 
 This way, if process B starts before process A, then B will
@@ -444,10 +412,10 @@ issuing any.
 
 @subsection{Exit reasons}
 
-If a @racket[#:reason] pattern is supplied, then the exit reason
-supplied to the @racket[delete-endpoint] or @racket[quit] action that
-led to the @racket[absence-event] is available to the endpoint's
-@racket[#:on-absence] handler expression.
+If a handler is wrapped in a @racket[match-reason] form, then the exit
+reason supplied to the @racket[delete-endpoint] or @racket[quit]
+action that led to the @racket[absence-event] is available to the
+endpoint's @racket[on-absence] handler expression.
 
 @subsection[#:tag "updating-endpoints"]{Updating endpoints}
 
@@ -464,24 +432,86 @@ automatic support for avoiding such transients.
 
 @subsection{Who am I talking to?}
 
-If either @racket[#:role] or any of @racket[#:peer-orientation],
-@racket[#:conversation], or @racket[#:peer-interest-type] are
-supplied, the @racket[handler-expr]s are given access to the role
-carried in the @racket[EndpointEvent] that triggered them.
+Wrapping a handler in @racket[match-orientation],
+@racket[match-conversation], and/or @racket[match-interest-type] gives
+a handler access to the contents of the @racket[role] structure
+carried in the triggering @racket[EndpointEvent].
 
-This role describes the @emph{intersection of interests} between the
-current endpoint and the peer endpoint, and so can proxy for the
-identity of the other party. It is in a sense a description of the
-scope of the current conversation.
+The carried role describes the @emph{intersection of interests}
+between the current endpoint and the peer endpoint, and so can proxy
+for the identity of the other party. It is in a sense a description of
+the scope of the current conversation.
 
-Using @racket[#:role] allows a handler complete access to the
-@racket[role] structure in the triggering event. It is more common
-however to simply use @racket[#:conversation] to extract the
-@racket[role-topic] alone, since it is seldom necessary to examine
+It is most common to simply use @racket[match-conversation] to extract
+the @racket[role-topic] alone, since it is seldom necessary to examine
 @racket[role-orientation] (since it's guaranteed to be complementary
 to the orientation of the current endpoint) or
-@racket[role-interest-type]. If access to those parts is required, use
-@racket[#:peer-orientation] and @racket[#:peer-interest-type].
+@racket[role-interest-type].
+
+See @secref{Examples} for examples of the use of
+@racket[match-conversation] and friends.
+
+@subsection[#:tag "participating-vs-observing"]{Participating in a conversation vs. observing conversations}
+
+The core @racket[build-endpoint] form takes an expression evaluating
+to a @racket[role], rather than a simple topic. This gives full
+control over the new endpoint's @racket[Orientation] and
+@racket[InterestType].
+
+The other forms exist for convenience, since usually the orientation
+and interest-type is known statically, and only the topic varies
+dynamically:
+
+@itemlist[
+
+  @item{@racket[publisher] and @racket[subscriber] (and typed
+variations ending in @tt{:}) are for ordinary @emph{participation} in
+conversations;}
+
+  @item{@racket[observe-subscribers] and @racket[observe-publishers]
+are for @emph{observing} conversations without participating in them; and}
+
+  @item{@racket[observe-subscribers/everything] and
+@racket[observe-publishers/everything] are like the ordinary
+@tt{observe-...} variants, but use interest-type @racket['everything]
+instead of @racket['observer].}
+
+]
+
+The @racket[publisher], @racket[observe-subscribers] and
+@racket[observe-subscribers/everything] forms create
+@emph{publisher}-oriented endpoints, and @racket[subscriber],
+@racket[observe-publishers] and @racket[observe-publishers/everything]
+create @emph{subscriber}-oriented endpoints. The rationale for this is
+that as a participant, the code should declare the role being played;
+but as an observer, the code should declare the roles being observed.
+
+}
+
+@subsection[#:tag "naming-endpoints"]{Naming endpoints}
+
+Endpoint names can be used to @seclink["updating-endpoints"]{update}
+or @seclink["deleting-endpoints"]{delete} endpoints.
+
+@defproc[(name-endpoint [id Any] [add-endpoint-action AddEndpoint]) AddEndpoint]{
+
+Returns a copy of the passed-in @racket[add-endpoint] action
+structure, with the @racket[id] field set to the passed-in identifying
+value.
+
+}
+
+@defform[(let-fresh (identifier ...) expr ...)]{
+
+Binds the @racket[identifier]s to freshly-gensymmed symbols so that
+they are available to the @racket[exprs]. @racket[let-fresh] is useful
+for inventing a guaranteed-unused name for a temporary endpoint:
+
+@racketblock[(let-fresh (my-name)
+	       (name-endpoint my-name
+		 (subscriber ?
+		   (on-message [_ (list (delete-endpoint my-name)
+					...)]))))]
 
 }
 
@@ -522,22 +552,21 @@ Equivalent to @racket[(send-message body 'subscriber)].
 @section{Creating processes}
 
 @deftogether[(
-@defform[(spawn maybe-pid-binding maybe-debug-name maybe-parent-continuation
-		#:child boot-expr)]
+@defform[(spawn maybe-pid-binding boot-expr)]
+@defform[(spawn/continue maybe-pid-binding
+			 #:parent parent-state-pattern k-expr
+			 #:child boot-expr)]
 @defform[#:literals (:)
-	 (spawn: maybe-pid-binding maybe-debug-name typed-parent-continuation
-		 #:child : ChildStateType boot-expr)
+         (spawn: maybe-pid-binding
+		 #:parent : ParentStateType
+		 #:child : ChildStateType boot-expr)]
+@defform[#:literals (:)
+         (spawn/continue: maybe-pid-binding
+			  #:parent parent-state-pattern : ParentStateType k-expr
+			  #:child : ChildStateType boot-expr)
 	 #:grammar
 	 [(maybe-pid-binding (code:line)
 			     (code:line #:pid identifier))
-	  (maybe-debug-name (code:line)
-			    (code:line #:debug-name expr))
-	  (maybe-parent-continuation (code:line)
-				     (code:line #:parent k-expr)
-				     (code:line #:parent parent-state-pattern k-expr))
-	  (typed-parent-continuation (code:line #:parent : ParentStateType)
-				     (code:line #:parent : ParentStateType k-expr)
-				     (code:line #:parent parent-state-pattern : ParentStateType k-expr))
 	  (k-expr expr)
 	  (boot-expr expr)]]
 )]{
@@ -550,16 +579,24 @@ If @racket[#:pid] is supplied, the associated identifier is bound to
 the child process's PID in both @racket[boot-expr] and the parent's
 @racket[k-expr].
 
-Any supplied @racket[#:debug-name] will be used in VM debug output.
-See also @secref{logging}.
+The @racket[spawn/continue] and @racket[spawn/continue:] variations
+include a @racket[k-expr], which will run in the parent process after
+the child process has been created. Note that @racket[k-expr] must
+return a @racket[Transition], since @racket[parent-state-pattern] is
+always supplied for these variations.
 
-If @racket[#:parent] is supplied, the associated @racket[k-expr] will
-run in the parent process after the child process has been created. If
-the @racket[parent-state-pattern] is also supplied, then
-@racket[k-expr] must return a @racket[Transition]; otherwise, it must
-return an @racket[ActionTree]. Note that in Typed Racket, for type
-system reasons, @racket[spawn:] requires @racket[ParentStateType] to
-be supplied.
+In Typed Racket, for type system reasons, @racket[spawn:] and
+@racket[spawn/continue:] require @racket[ParentStateType] to be
+supplied as well as @racket[ChildStateType].
+
+}
+
+@defproc[(name-process [id Any] [spawn-action Spawn]) Spawn]{
+
+Returns a copy of the passed-in @racket[spawn] action structure, with
+the @racket[debug-name] field set to the passed-in identifying value.
+The debug name of a process is used in VM debug output. See also
+@secref{logging}.
 
 }
 
@@ -588,23 +625,18 @@ itself.
 @section{Cooperative scheduling}
 
 @deftogether[(
-@defform[(yield maybe-state-pattern k-expr)]
+@defform[(yield state-pattern k-expr)]
 @defform[#:literals (:)
-	 (yield: typed-state-pattern k-expr)
-	 #:grammar
-	 [(maybe-state-pattern (code:line)
-			       (code:line #:state pattern))
-	  (typed-state-pattern (code:line : State)
-			       (code:line pattern : State))
-	  (k-expr expr)]]
+	 (yield: state-pattern : State k-expr)]
 )]{
 
 Lets other processes in the system run for a step, returning to
 evaluate @racket[k-expr] only after doing a complete round of the
 scheduler.
 
-If @racket[pattern] is supplied, @racket[k-expr] should evaluate to a
-@racket[Transition]; otherwise it should produce an @racket[ActionTree].
+The state of the yielding process will be matched against
+@racket[state-pattern] when the process is resumed, and
+@racket[k-expr] must evaluate to a @racket[Transition].
 
 }
 
@@ -676,7 +708,7 @@ endpoint in the VM's own network, the ground VM:
 @racketblock[
 (spawn-vm
  (at-meta-level
-  (endpoint #:subscriber (tcp-channel ? (tcp-listener 5999) ?) ...)))
+  (subscriber (tcp-channel ? (tcp-listener 5999) ?) ...)))
 ]
 
 In this example, a new process is spawned as a sibling of the
@@ -685,7 +717,7 @@ nested VM rather than as a sibling of its primordial process:
 @racketblock[
 (spawn-vm
  (at-meta-level
-  (spawn #:child (transition/no-state (send-message 'hello-world)))))
+  (spawn (transition/no-state (send-message 'hello-world)))))
 ]
 
 Compare to this example, which spawns a sibling of the
@@ -693,7 +725,7 @@ nested VM's primordial process:
 
 @racketblock[
 (spawn-vm
- (spawn #:child (transition/no-state (send-message 'hello-world))))
+ (spawn (transition/no-state (send-message 'hello-world))))
 ]
 
 }
