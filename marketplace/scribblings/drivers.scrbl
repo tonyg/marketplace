@@ -13,7 +13,7 @@
 
 @defproc[(event-relay [self-id Symbol]) Spawn]{
 
-Lets processes in some @racket[nested-vm] interact with the outside
+Lets processes in some nested VM interact with the outside
 world using @racket[ground-vm]-level event-based subscriptions.
 
 Returns a @racket[spawn] which starts an event-relay process with

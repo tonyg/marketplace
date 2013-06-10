@@ -611,16 +611,16 @@ If @racket[pattern] is supplied, @racket[k-expr] should evaluate to a
 @section{Creating nested VMs}
 
 @deftogether[(
-@defform[(nested-vm maybe-vm-pid-binding maybe-boot-pid-binding
-		    maybe-initial-state
-		    maybe-debug-name
-		    boot-action-expr ...)]
+@defform[(spawn-vm maybe-vm-pid-binding maybe-boot-pid-binding
+		   maybe-initial-state
+		   maybe-debug-name
+		   boot-action-expr ...)]
 @defform[#:literals (:)
-	 (nested-vm: : ParentStateType
-		     maybe-vm-pid-binding maybe-boot-pid-binding
-		     maybe-typed-initial-state
-		     maybe-debug-name
-		     boot-action-expr ...)
+	 (spawn-vm: : ParentStateType
+		    maybe-vm-pid-binding maybe-boot-pid-binding
+		    maybe-typed-initial-state
+		    maybe-debug-name
+		    boot-action-expr ...)
 	 #:grammar
 	 [(maybe-vm-pid-binding (code:line)
 				(code:line #:vm-pid identifier))
@@ -651,7 +651,7 @@ primordial process in the new VM.
 @section{Relaying across layers}
 
 @deftogether[(
-@defform[#:literals (:) (at-meta-level: : StateType preaction ...)]
+@defform[(at-meta-level: StateType preaction ...)]
 @defproc[(at-meta-level [preaction (PreAction State)] ...) (Action StateType)]
 )]{
 
@@ -670,29 +670,29 @@ For example, wrapping an @racket[endpoint] in @racket[at-meta-level]
 adds a subscription to the VM's container's network. Instead of
 listening to sibling processes of the acting process, the new endpoint
 will listen to sibling processes of the acting process's VM. In this
-example, the primordial process in the @racket[nested-vm] creates an
+example, the primordial process in the nested VM creates an
 endpoint in the VM's own network, the ground VM:
 
 @racketblock[
-(nested-vm
+(spawn-vm
  (at-meta-level
   (endpoint #:subscriber (tcp-channel ? (tcp-listener 5999) ?) ...)))
 ]
 
 In this example, a new process is spawned as a sibling of the
-@racket[nested-vm] rather than as a sibling of its primordial process:
+nested VM rather than as a sibling of its primordial process:
 
 @racketblock[
-(nested-vm
+(spawn-vm
  (at-meta-level
   (spawn #:child (transition/no-state (send-message 'hello-world)))))
 ]
 
 Compare to this example, which spawns a sibling of the
-@racket[nested-vm]'s primordial process:
+nested VM's primordial process:
 
 @racketblock[
-(nested-vm
+(spawn-vm
  (spawn #:child (transition/no-state (send-message 'hello-world))))
 ]
 
