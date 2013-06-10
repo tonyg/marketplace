@@ -11,7 +11,7 @@
     (spawn: #:parent : ParentState
 	    #:child : Void
 	    (transition/no-state
-	      (observe-publishers: Void (cons ? ?)
+	      (observe-subscribers: Void (cons ? ?)
 		(match-conversation (cons (? evt? e) _)
 		  (on-presence (begin
 				 (printf "SUBSCRIBED ~v~n" e)
