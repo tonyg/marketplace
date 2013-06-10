@@ -257,17 +257,7 @@ collection of macros helps streamline endpoint setup.
 @defform[(observe-publishers/everything topic handler ...)]
 @defform[(observe-publishers/everything: State topic handler ...)]
 @defform[(build-endpoint pre-eid role handler ...)]
-@defform[(build-endpoint: State pre-eid role handler ...)
-	 #:grammar
-	 [(handler unfiltered-handler
-		   (match-state pattern handler ...)
-		   (match-orientation pattern handler ...)
-		   (match-conversation pattern handler ...)
-		   (match-interest-type pattern handler ...)
-		   (match-reason pattern handler ...))
-	  (unfiltered-handler (on-presence expr ...)
-			      (on-absence expr ...)
-			      (on-message [pattern expr ...] ...))]]
+@defform[(build-endpoint: State pre-eid role handler ...)]
 )]{
 
 The many variations on the core
@@ -302,6 +292,8 @@ note that @racket[?] is a wildcard in a topic pattern, while
 
 @subsection{Receiving messages}
 
+@defform[(on-message [pattern expr ...] ...)]{
+
 Supply an @racket[on-message] handler clause to an endpoint definition
 to handle incoming message events (as distinct from presence- or
 absence-events).
@@ -315,7 +307,13 @@ The following endpoint @emph{subscribes} to all messages, but only
 		['hello (list (send-message 'goodbye)
 			      (quit))]))]
 
+}
+
+}
+
 @subsection{Action-only vs. State updates}
+
+@defform[(match-state pattern handler ...)]{
 
 If a group of handlers is wrapped in @racket[match-state], then all
 the wrapped handlers are expected to return
@@ -341,7 +339,14 @@ or, explicitly accessing the endpoint's process's state,
 		 (on-message ['ping (transition old-state
 				      (send-message 'pong))])))]
 
+}
+
 @subsection{Handling presence and absence events}
+
+@deftogether[(
+@defform[(on-presence expr ...)]
+@defform[(on-absence expr ...)]
+)]{
 
 Other endpoints (in this or other processes) may have matching topics
 and complementary orientations to the current endpoint. When such
@@ -410,12 +415,18 @@ This way, if process B starts before process A, then B will
 automatically wait until A is ready to receive ping requests before
 issuing any.
 
+}
+
 @subsection{Exit reasons}
+
+@defform[(match-reason pattern handler ...)]{
 
 If a handler is wrapped in a @racket[match-reason] form, then the exit
 reason supplied to the @racket[delete-endpoint] or @racket[quit]
 action that led to the @racket[absence-event] is available to the
 endpoint's @racket[on-absence] handler expression.
+
+}
 
 @subsection[#:tag "updating-endpoints"]{Updating endpoints}
 
@@ -431,6 +442,12 @@ signals. A future release of this library will include better
 automatic support for avoiding such transients.
 
 @subsection{Who am I talking to?}
+
+@deftogether[(
+@defform[(match-orientation pattern handler ...)]
+@defform[(match-conversation pattern handler ...)]
+@defform[(match-interest-type pattern handler ...)]
+)]{
 
 Wrapping a handler in @racket[match-orientation],
 @racket[match-conversation], and/or @racket[match-interest-type] gives
@@ -450,6 +467,8 @@ to the orientation of the current endpoint) or
 
 See @secref{Examples} for examples of the use of
 @racket[match-conversation] and friends.
+
+}
 
 @subsection[#:tag "participating-vs-observing"]{Participating in a conversation vs. observing conversations}
 
@@ -485,8 +504,6 @@ The @racket[publisher], @racket[observe-subscribers] and
 create @emph{subscriber}-oriented endpoints. The rationale for this is
 that as a participant, the code should declare the role being played;
 but as an observer, the code should declare the roles being observed.
-
-}
 
 @subsection[#:tag "naming-endpoints"]{Naming endpoints}
 
