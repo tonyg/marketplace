@@ -1,6 +1,11 @@
 all: out
 
 pages:
+	@(git branch -v | grep -q gh-pages || (echo local gh-pages branch missing; false))
+	@echo
+	@git branch -av | grep gh-pages
+	@echo
+	@(echo 'Is the branch up to date? Press enter to continue.'; read dummy)
 	git clone -b gh-pages ../.. pages
 
 publish: out pages
