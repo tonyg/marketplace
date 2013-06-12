@@ -2,14 +2,15 @@
 
 (require (for-syntax syntax/parse))
 (require (for-syntax racket/base))
-(require "support/dsl-typed.rkt")
-(require (for-syntax "support/dsl-typed.rkt"))
 
 (require racket/match)
 
 (require (prefix-in core: "main.rkt"))
 
-(provide name-endpoint
+(require "sugar-endpoints-support.rkt")
+
+(provide (all-from-out "sugar-endpoints-support.rkt")
+	 name-endpoint
 	 let-fresh
 	 observe-subscribers:
 	 observe-subscribers/everything:
@@ -18,16 +19,6 @@
 	 publisher:
 	 subscriber:
 	 build-endpoint:)
-
-(define&provide-dsl-helper-syntaxes "endpoint definition context"
-  [match-state
-   match-orientation
-   match-conversation
-   match-interest-type
-   match-reason
-   on-presence
-   on-absence
-   on-message])
 
 ;; Must handle:
 ;;  - orientation
@@ -121,11 +112,17 @@
 	      [(expr ...)
 	       #`(lambda: ([state : #,State]) (core:transition state (list expr ...)))])))
 
-      (syntax-case clauses-stx ()
+      (syntax-case clauses-stx (match-state
+				match-orientation
+				match-conversation
+				match-interest-type
+				match-reason
+				on-presence
+				on-absence
+				on-message)
 	[() '()]
 
-	[((maybe-match-state pat-stx inner-clause ...) outer-clause ...)
-	 (literal-identifier=? #'maybe-match-state #'match-state)
+	[((match-state pat-stx inner-clause ...) outer-clause ...)
 	 (append (combine-handler-clauses State
 					  (syntax (inner-clause ...))
 					  #t
@@ -136,8 +133,7 @@
 					  reason-stx)
 		 (do-tail (syntax (outer-clause ...))))]
 
-	[((maybe-match-orientation pat-stx inner-clause ...) outer-clause ...)
-	 (literal-identifier=? #'maybe-match-orientation #'match-orientation)
+	[((match-orientation pat-stx inner-clause ...) outer-clause ...)
 	 (append (combine-handler-clauses State
 					  (syntax (inner-clause ...))
 					  stateful?
@@ -148,8 +144,7 @@
 					  reason-stx)
 		 (do-tail (syntax (outer-clause ...))))]
 
-	[((maybe-match-conversation pat-stx inner-clause ...) outer-clause ...)
-	 (literal-identifier=? #'maybe-match-conversation #'match-conversation)
+	[((match-conversation pat-stx inner-clause ...) outer-clause ...)
 	 (append (combine-handler-clauses State
 					  (syntax (inner-clause ...))
 					  stateful?
@@ -160,8 +155,7 @@
 					  reason-stx)
 		 (do-tail (syntax (outer-clause ...))))]
 
-	[((maybe-match-interest-type pat-stx inner-clause ...) outer-clause ...)
-	 (literal-identifier=? #'maybe-match-interest-type #'match-interest-type)
+	[((match-interest-type pat-stx inner-clause ...) outer-clause ...)
 	 (append (combine-handler-clauses State
 					  (syntax (inner-clause ...))
 					  stateful?
@@ -172,8 +166,7 @@
 					  reason-stx)
 		 (do-tail (syntax (outer-clause ...))))]
 
-	[((maybe-match-reason pat-stx inner-clause ...) outer-clause ...)
-	 (literal-identifier=? #'maybe-match-reason #'match-reason)
+	[((match-reason pat-stx inner-clause ...) outer-clause ...)
 	 (append (combine-handler-clauses State
 					  (syntax (inner-clause ...))
 					  stateful?
@@ -184,16 +177,14 @@
 					  #'pat-stx)
 		 (do-tail (syntax (outer-clause ...))))]
 
-	[((maybe-on-presence expr ...) outer-clause ...)
-	 (literal-identifier=? #'maybe-on-presence #'on-presence)
+	[((on-presence expr ...) outer-clause ...)
 	 (cons #`[(core:presence-event (core:role #,orientation-stx
 						  #,conversation-stx
 						  #,interest-type-stx))
 		  #,(stateful-lift 'on-presence (syntax (expr ...)))]
 	       (do-tail (syntax (outer-clause ...))))]
 
-	[((maybe-on-absence expr ...) outer-clause ...)
-	 (literal-identifier=? #'maybe-on-absence #'on-absence)
+	[((on-absence expr ...) outer-clause ...)
 	 (cons #`[(core:absence-event (core:role #,orientation-stx
 						 #,conversation-stx
 						 #,interest-type-stx)
@@ -201,8 +192,7 @@
 		  #,(stateful-lift 'on-absence (syntax (expr ...)))]
 	       (do-tail (syntax (outer-clause ...))))]
 
-	[((maybe-on-message [message-pat expr ...] ...) outer-clause ...)
-	 (literal-identifier=? #'maybe-on-message #'on-message)
+	[((on-message [message-pat expr ...] ...) outer-clause ...)
 	 (cons #`[(core:message-event (core:role #,orientation-stx
 						 #,conversation-stx
 						 #,interest-type-stx)

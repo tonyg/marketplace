@@ -2,13 +2,15 @@
 
 (require (for-syntax syntax/parse))
 (require (for-syntax racket/base))
-(require "support/dsl-untyped.rkt")
 
 (require racket/match)
 
 (require (prefix-in core: "main.rkt"))
 
-(provide name-endpoint
+(require "sugar-endpoints-support.rkt")
+
+(provide (all-from-out "sugar-endpoints-support.rkt")
+	 name-endpoint
 	 let-fresh
 	 observe-subscribers
 	 observe-subscribers/everything
@@ -17,16 +19,6 @@
 	 publisher
 	 subscriber
 	 build-endpoint)
-
-(define&provide-dsl-helper-syntaxes "endpoint definition context"
-  [match-state
-   match-orientation
-   match-conversation
-   match-interest-type
-   match-reason
-   on-presence
-   on-absence
-   on-message])
 
 ;; Must handle:
 ;;  - orientation
