@@ -49,10 +49,7 @@ containing a single
 
 ## Compiling and running the code
 
-You will need the latest **prerelease** version of Racket. Any version
-newer than or equal to Racket 5.3.4.11 should work. Nightly-build
-installers for Racket can be downloaded
-[here](http://pre.racket-lang.org/installers/).
+You will need Racket version 5.3.4.11 or later.
 
 Once you have Racket installed, run
 
