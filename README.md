@@ -26,25 +26,23 @@ A (draft) manual for Marketplace is available
 
 ## The code
 
-This repository contains a [Racket](http://racket-lang.org/) package
-containing a single
-[collection](http://docs.racket-lang.org/reference/collects.html),
+This repository contains a [Racket](http://racket-lang.org/) package,
 `marketplace`, which includes
 
- - the implementation of the `#lang marketplace` language, in
-   [`marketplace/`](https://github.com/tonyg/marketplace/tree/master/marketplace/).
+ - the implementation of the `#lang marketplace` language, in the
+   [top directory](https://github.com/tonyg/marketplace/tree/master/).
 
  - a TCP echo server example, in
-   [`marketplace/examples/echo-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/echo-paper.rkt).
+   [`examples/echo-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/examples/echo-paper.rkt).
 
  - a TCP chat server example, in
-   [`marketplace/examples/chat-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/chat-paper.rkt).
+   [`examples/chat-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/examples/chat-paper.rkt).
 
  - Haskell, Erlang and Python implementations of the chat server for comparison, in
-   [`marketplace/examples/chat.hs`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/chat.hs),
-   [`chat.erl`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/chat.erl),
+   [`examples/chat.hs`](https://github.com/tonyg/marketplace/tree/master/examples/chat.hs),
+   [`chat.erl`](https://github.com/tonyg/marketplace/tree/master/examples/chat.erl),
    and
-   [`chat.py`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/chat.py)
+   [`chat.py`](https://github.com/tonyg/marketplace/tree/master/examples/chat.py)
    respectively.
 
 ## Compiling and running the code
@@ -65,7 +63,7 @@ it still takes around 2 minutes.
 
 At this point, you may load and run any of the example `*.rkt` files
 in the
-[`marketplace/examples/`](https://github.com/tonyg/marketplace/tree/master/marketplace/examples/)
+[`examples/`](https://github.com/tonyg/marketplace/tree/master/examples/)
 directory.
 
 Note that both the echo server and chat server examples do not print
