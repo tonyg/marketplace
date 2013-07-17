@@ -45,7 +45,7 @@
 	     (on-presence
 	      (maybe-spawn-socket 'publisher c active-handles #t tcp-connection-manager))
 	     (on-absence (maybe-forget-socket 'publisher c active-handles)))))
-       (observe-subscribers (tcp-channel any-handle any-remote (wild))
+       (observe-subscribers (tcp-channel any-remote any-handle (wild))
 	 (match-state active-handles
 	   (match-conversation c
 	     (on-presence
@@ -75,7 +75,7 @@
      (cond
       [(ground? remote-addr) (transition active-handles)]
       [(not (ground? local-addr)) (transition active-handles)]
-      [else (transition (set-remove active-handles local-addr))])]))
+      [else (transition (set-remove active-handles (cons local-addr remote-addr)))])]))
 
 ;; TcpAddress TcpAddress -> Transition
 (define (tcp-listener-manager local-addr dummy-remote-addr)

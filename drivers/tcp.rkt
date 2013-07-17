@@ -129,7 +129,7 @@
      (cond
       [(ground? remote-addr) (transition active-handles)]
       [(not (ground? local-addr)) (transition active-handles)]
-      [else (transition (set-remove active-handles local-addr))])]))
+      [else (transition (set-remove active-handles (cons local-addr remote-addr)))])]))
 
 ;; TcpAddress TcpAddress -> Transition
 (define (tcp-listener-manager local-addr dummy-remote-addr)
