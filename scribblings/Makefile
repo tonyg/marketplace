@@ -6,7 +6,7 @@ pages:
 	@git branch -av | grep gh-pages
 	@echo
 	@(echo 'Is the branch up to date? Press enter to continue.'; read dummy)
-	git clone -b gh-pages ../.. pages
+	git clone -b gh-pages .. pages
 
 publish: out pages
 	rm -rf pages/*
