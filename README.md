@@ -47,7 +47,7 @@ This repository contains a [Racket](http://racket-lang.org/) package,
 
 ## Compiling and running the code
 
-You will need Racket version 5.3.4.11 or later.
+You will need Racket version 5.90.x or later.
 
 Once you have Racket installed, run
 
