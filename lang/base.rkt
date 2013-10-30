@@ -48,7 +48,7 @@
 		(if (free-identifier=? #'head #'begin)
 		    (accumulate-actions action-ids
 					final-forms
-					(append (syntax->list #'(rest ...)) forms))
+					(append (syntax->list #'(rest ...)) (cdr forms)))
 		    (if (ormap (lambda (i) (free-identifier=? #'head i))
 			       (syntax->list #'(define-values define-syntaxes begin-for-syntax
 						 module module*
