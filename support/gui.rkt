@@ -271,12 +271,13 @@
 	  (select-state-tab))))
 
     (define (refresh-vm-display v)
-      (define procs (sort (hash->list (core:vm-processes v)) < #:key car))
+      ;; (define procs (sort (hash->list (core:vm-processes v)) < #:key car))
       (send vm-display clear)
-      (for [(entry (in-list procs))]
-	(match-define (cons pid wp) entry)
-	;;(wp (lambda (p) (displayln `(P ,p))))
-	(displayln (cons pid wp))))
+      ;; (for [(entry (in-list procs))]
+      ;; 	(match-define (cons pid wp) entry)
+      ;; 	;;(wp (lambda (p) (displayln `(P ,p))))
+      ;; 	(displayln (cons pid wp)))
+      )
 
     (define (select-state-tab)
       (define selection (send state-panel get-selection))
