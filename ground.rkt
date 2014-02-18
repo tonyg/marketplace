@@ -59,7 +59,7 @@
   (define pid (process-pid old-p))
   (match (endpoint-role ep)
     [(role 'subscriber (cons (? evt? evt) _) 'participant)
-     (: evt-handler : Any -> vm -> vm)
+     (: evt-handler : Any -> (vm -> vm))
      (define ((evt-handler message) state)
        (let-values (((state wp) (extract-process state pid)))
 	 (if (not wp)
