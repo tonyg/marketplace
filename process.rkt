@@ -12,7 +12,10 @@
 	 action-tree->quasiqueue
 	 quit-interruptk
 	 run-ready
-	 notify-route-change-vm)
+	 notify-route-change-vm
+	 marketplace-continuation-mark-key)
+
+(define marketplace-continuation-mark-key (make-continuation-mark-key 'marketplace))
 
 (define-syntax-rule (send-to-user p (e) failure-result enclosed-expr)
   (send-to-user* (process-debug-name p) (process-pid p) (e) failure-result enclosed-expr))
@@ -26,7 +29,9 @@
 						    debug-name pid e))
 			       failure-result)])
     (marketplace-log 'debug "Entering process ~v(~v)" debug-name pid)
-    (define result enclosed-expr)
+    (define result (with-continuation-mark marketplace-continuation-mark-key
+					   (or debug-name pid)
+					   enclosed-expr))
     (marketplace-log 'debug "Leaving  process ~v(~v)" debug-name pid)
     result))
 
