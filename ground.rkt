@@ -19,8 +19,22 @@
 
 (provide run-ground-vm)
 
+(require/typed "profiling.rkt"
+               [#:opaque Feature feature?]
+               [marketplace-feature Feature])
+(require/typed feature-profile
+               [feature-profile-thunk ((-> Void) [#:extra-features (Listof Feature)] -> Void)])
+
 (: run-ground-vm : process-spec -> Void)
 (define (run-ground-vm boot)
+  (feature-profile-thunk
+   #:extra-features (list marketplace-feature)
+   (lambda ()
+     (with-handlers ([exn:break? void])
+       (run-ground-vm* boot)))))
+
+(: run-ground-vm* : process-spec -> Void)
+(define (run-ground-vm* boot)
   (let loop ((state (make-vm boot)))
     (match (run-vm state)
       [(transition state actions)
