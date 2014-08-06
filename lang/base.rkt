@@ -3,13 +3,13 @@
 (require (for-syntax racket/base))
 (require (for-syntax racket/pretty))
 
-(require "../sugar-untyped.rkt")
+(require "../sugar.rkt")
 (require "../drivers/tcp-bare.rkt")
 (require "../support/spy.rkt")
 
 (provide (rename-out [module-begin #%module-begin])
 	 (except-out (all-from-out racket/base) #%module-begin)
-	 (all-from-out "../sugar-untyped.rkt")
+	 (all-from-out "../sugar.rkt")
 	 (all-from-out "../drivers/tcp-bare.rkt")
 	 (all-from-out "../support/spy.rkt")
 	 stateless)

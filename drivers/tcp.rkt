@@ -5,8 +5,9 @@
 (require racket/match)
 (require (prefix-in tcp: racket/tcp))
 (require racket/port)
-(require "../sugar-untyped.rkt")
+(require "../sugar.rkt")
 (require "../support/dump-bytes.rkt")
+(require "../unify.rkt")
 
 (provide (struct-out tcp-address)
 	 (struct-out tcp-handle)

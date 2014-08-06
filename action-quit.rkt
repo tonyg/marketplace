@@ -1,24 +1,23 @@
-#lang typed/racket/base
+#lang racket/base
 
 (require racket/match)
-(require "types.rkt")
+(require "structs.rkt")
 (require "roles.rkt")
 (require "vm.rkt")
-(require "log-typed.rkt")
+(require "log.rkt")
 (require "process.rkt")
 (require "action-delete-endpoint.rkt")
-(require (rename-in "tr-struct-copy.rkt" [tr-struct-copy struct-copy])) ;; PR13149 workaround
+(require "quasiqueue.rkt")
 
-(require/typed web-server/private/util
-	       [exn->string (exn -> String)])
+(require (only-in web-server/private/util exn->string))
 
 (provide do-quit)
 
-(: do-quit : (All (State) PID Reason (process State) vm
-		  -> (values (Option (process State)) vm (QuasiQueue (Action vm)))))
+;; do-quit : (All (State) PID Reason (process State) vm
+;; 		  -> (values (Option (process State)) vm (QuasiQueue (Action vm))))
 (define (do-quit killed-pid reason p state)
 
-  (: log-quit : (All (KilledState) (process KilledState) -> Void))
+  ;; log-quit : (All (KilledState) (process KilledState) -> Void)
   (define (log-quit p)
     (marketplace-log (if reason 'warning 'info)
 		     "PID ~v (~a) quits with reason: ~a"
@@ -36,9 +35,7 @@
 	(if (not maybe-killed-wp)
 	    (values p state (empty-quasiqueue))
 	    (apply values
-		   (unwrap-process KilledState
-		       (List (Option (process State)) vm (QuasiQueue (Action vm)))
-		       (killed-p maybe-killed-wp)
+		   (let ((killed-p maybe-killed-wp))
 		     (log-quit killed-p)
 		     (let-values (((killed-p state meta-actions)
 				   (delete-all-endpoints reason killed-p state)))

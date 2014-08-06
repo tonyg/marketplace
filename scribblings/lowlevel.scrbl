@@ -41,8 +41,8 @@ Typed Racket types capturing various notions of handler function.
 
 @section{Messages, Topics and Roles}
 
-@declare-exporting[marketplace marketplace/sugar-untyped marketplace/sugar-typed
-		   #:use-sources (marketplace marketplace/sugar-untyped marketplace/sugar-typed)]
+@declare-exporting[marketplace marketplace/sugar
+		   #:use-sources (marketplace marketplace/sugar)]
 
 @deftogether[(
 @deftype[Message Any]
@@ -255,8 +255,8 @@ Deletes an existing endpoint named @racket[pre-eid]. The given
 
 If no specific reason is needed, it is conventional to supply
 @racket[#f] as the @racket[delete-endpoint-reason]. See also the
-convenience @from[marketplace/sugar-values]{@racket[delete-endpoint]}
-function from @racket[marketplace/sugar-values].
+convenience @from[marketplace/sugar]{@racket[delete-endpoint]}
+function from @racket[marketplace/sugar].
 
 }
 
@@ -270,9 +270,9 @@ the containing VM.} The given @racket[Orientation] should describe the
 role the sender is playing when sending this message: usually, it will
 be @racket['publisher], but when the message is @emph{feedback} for
 some publisher, it will be @racket['subscriber].
-@from[marketplace/sugar-values]{See also the @racket[send-message] and
+@from[marketplace/sugar]{See also the @racket[send-message] and
 @racket[send-feedback] convenience functions from
-@racket[marketplace/sugar-values].}
+@racket[marketplace/sugar].}
 
 }
 

@@ -1,7 +1,7 @@
 #lang racket/base
 ;; Plain Racket version, using (require) instead of #lang marketplace.
 
-(require marketplace/sugar-untyped)
+(require marketplace/sugar)
 (require marketplace/drivers/tcp-bare)
 
 (define (echoer from to)

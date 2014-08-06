@@ -4,10 +4,7 @@
 
 @require[(for-label marketplace/support/spy
 		    marketplace/support/debug
-		    marketplace/log-untyped
-		    (except-in marketplace/log-typed
-			       marketplace-log
-			       marketplace-root-logger))]
+		    marketplace/log)]
 
 @title{Management and Monitoring}
 

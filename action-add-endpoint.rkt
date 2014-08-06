@@ -1,16 +1,15 @@
-#lang typed/racket/base
+#lang racket/base
 
 (require racket/match)
-(require "types.rkt")
+(require "structs.rkt")
 (require "roles.rkt")
 (require "vm.rkt")
 (require "process.rkt")
-(require (rename-in "tr-struct-copy.rkt" [tr-struct-copy struct-copy])) ;; PR13149 workaround
 
 (provide do-add-endpoint)
 
-(: do-add-endpoint : (All (State) PreEID Role (Handler State) (process State) vm
-			  -> (values (Option (process State)) vm)))
+;; do-add-endpoint : (All (State) PreEID Role (Handler State) (process State) vm
+;; 			  -> (values (Option (process State)) vm))
 (define (do-add-endpoint pre-eid role h p state)
   (define new-eid (eid (process-pid p) pre-eid))
   (define old-endpoint (hash-ref (process-endpoints p) pre-eid (lambda () #f)))
@@ -35,7 +34,7 @@
 						      state)))
 	(values p state))))
 
-(: install-endpoint : (All (State) (process State) (endpoint State) -> (process State)))
+;; install-endpoint : (All (State) (process State) (endpoint State) -> (process State))
 (define (install-endpoint p ep)
   (define pre-eid (eid-pre-eid (endpoint-id ep)))
   (struct-copy process p [endpoints (hash-set (process-endpoints p) pre-eid ep)]))

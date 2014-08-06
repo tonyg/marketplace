@@ -1,7 +1,7 @@
-#lang typed/racket/base
+#lang racket/base
 
 (provide list-max)
 
-(: list-max : (Listof Integer) -> Integer)
+;; list-max : (Listof Integer) -> Integer
 (define (list-max xs)
   (foldr max 0 xs))

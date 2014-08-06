@@ -4,12 +4,25 @@
 (require (for-syntax racket/base))
 
 (require racket/match)
-
 (require (prefix-in core: "main.rkt"))
+(require (except-in "main.rkt"
+		    at-meta-level
+		    spawn
+		    yield
+		    transition
+		    delete-endpoint
+		    send-message
+		    quit))
+(require "support/dsl-untyped.rkt")
 
-(require "sugar-endpoints-support.rkt")
+(provide transition
+	 delete-endpoint
+	 send-message
+	 send-feedback
+	 quit
+	 sequence-actions
+	 (rename-out [core:wild wild])
 
-(provide (all-from-out "sugar-endpoints-support.rkt")
 	 name-endpoint
 	 let-fresh
 	 observe-subscribers
@@ -18,7 +31,71 @@
 	 observe-publishers/everything
 	 publisher
 	 subscriber
-	 build-endpoint)
+	 build-endpoint
+
+	 ?
+	 transition/no-state
+	 spawn
+	 spawn/continue
+	 name-process
+	 yield
+	 at-meta-level
+	 spawn-vm
+	 ground-vm)
+
+;; transition : (All (State) State (core:ActionTree State) * -> (core:Transition State))
+(define (transition state . actions)
+  (core:transition state actions))
+
+(define (delete-endpoint id [reason #f])
+  (core:delete-endpoint id reason))
+
+;; send-message : (case-> [Any -> core:send-message]
+;; 			  [Any core:Orientation -> core:send-message])
+(define (send-message body [orientation 'publisher])
+  (core:send-message body orientation))
+
+(define (send-feedback body)
+  (core:send-message body 'subscriber))
+
+;; quit : (case-> [-> core:quit]
+;; 		  [(Option core:PID) -> core:quit]
+;; 		  [(Option core:PID) Any -> core:quit])
+(define (quit [who #f] [reason #f])
+  (core:quit who reason))
+
+;; sequence-actions : (All (State)
+;; 			   (core:Transition State)
+;; 			   (U (core:ActionTree State) (State -> (core:Transition State))) *
+;; 			   -> (core:Transition State))
+(define (sequence-actions t . more-actions-and-transformers)
+  (match-define (core:transition initial-state initial-actions) t)
+  (let loop ((state initial-state)
+	     (actions initial-actions)
+	     (items more-actions-and-transformers))
+    (match items
+      ['()
+       (core:transition state actions)]
+      [(cons item remaining-items)
+       (if (procedure? item)
+	   (match (item state)
+	     [(core:transition new-state more-actions)
+	      (loop new-state
+		    (cons actions more-actions)
+		    remaining-items)])
+	   (loop state
+		 (cons actions item)
+		 remaining-items))])))
+
+(define&provide-dsl-helper-syntaxes "endpoint definition context"
+  [match-state
+   match-orientation
+   match-conversation
+   match-interest-type
+   match-reason
+   on-presence
+   on-absence
+   on-message])
 
 ;; Must handle:
 ;;  - orientation
@@ -215,7 +292,88 @@
 				  (syntax _)))
 			     [_ (lambda (state) (core:transition state '()))]))])))
 
+(define-syntax-rule (transition/no-state action ...)
+  (transition (void) action ...))
+
+;; A fresh unification variable, as identifier-syntax.
+(define-syntax ? (syntax-id-rules () (_ (wild))))
+
+(define-syntax spawn
+  (lambda (stx)
+    (syntax-parse stx
+      [(_ (~or (~optional (~seq #:pid pid) #:defaults ([pid #'p0]) #:name "#:pid")) ...
+	  exp)
+       #`(core:spawn (core:process-spec (lambda (pid) (lambda (k) (k exp))))
+		     #f
+		     #f)])))
+
+(define-syntax spawn/continue
+  (lambda (stx)
+    (syntax-parse stx
+      [(_ (~or (~optional (~seq #:pid pid) #:defaults ([pid #'p0]) #:name "#:pid")) ...
+	  #:parent parent-state-pattern parent-k-exp
+	  #:child exp)
+       #`(core:spawn (core:process-spec (lambda (pid) (lambda (k) (k exp))))
+		     (lambda (pid) (match-lambda [parent-state-pattern parent-k-exp]))
+		     #f)])))
+
+(define (name-process n p)
+  (match p
+    [(core:spawn spec parent-k _)
+     (core:spawn spec parent-k n)]))
+
+(define-syntax yield
+  (lambda (stx)
+    (syntax-case stx ()
+      [(_ state-pattern exp)
+       #'(core:yield (match-lambda [state-pattern exp]))])))
+
+(define (at-meta-level . preactions)
+  (match preactions
+    [(cons preaction '()) (core:at-meta-level preaction)]
+    [_ (map core:at-meta-level preactions)]))
+
+(define-syntax spawn-vm
+  (lambda (stx)
+    (syntax-parse stx
+      [(_ (~or (~optional (~seq #:vm-pid vm-pid) #:defaults ([vm-pid #'p0])
+			  #:name "#:vm-pid")
+	       (~optional (~seq #:boot-pid boot-pid) #:defaults ([boot-pid #'p0])
+			  #:name "#:boot-pid")
+	       (~optional (~seq #:initial-state initial-state)
+			  #:defaults ([initial-state #'(void)])
+			  #:name "#:initial-state")
+	       (~optional (~seq #:debug-name debug-name)
+			  #:defaults ([debug-name #'#f])
+			  #:name "#:debug-name"))
+	  ...
+	  exp ...)
+       #`(core:make-nested-vm
+	  (lambda (vm-pid)
+	    (core:process-spec (lambda (boot-pid)
+				 (lambda (k) (k (core:transition initial-state
+								 (list exp ...)))))))
+	  debug-name)])))
+
+(define-syntax ground-vm
+  (lambda (stx)
+    (syntax-parse stx
+      [(_ (~or (~optional (~seq #:boot-pid boot-pid) #:defaults ([boot-pid #'p0])
+			  #:name "#:boot-pid")
+	       (~optional (~seq #:initial-state initial-state)
+			  #:defaults ([initial-state #'(void)])
+			  #:name "#:initial-state"))
+	  ...
+	  exp ...)
+       #`(core:run-ground-vm
+	  (core:process-spec (lambda (boot-pid)
+			       (lambda (k) (k (core:transition initial-state
+							       (list exp ...)))))))])))
+
 ;;; Local Variables:
+;;; eval: (put 'sequence-actions 'scheme-indent-function 1)
+;;; eval: (put 'name-process 'scheme-indent-function 1)
+;;; eval: (put 'yield 'scheme-indent-function 1)
 ;;; eval: (put 'name-endpoint 'scheme-indent-function 1)
 ;;; eval: (put 'let-fresh 'scheme-indent-function 1)
 ;;; eval: (put 'observe-subscribers 'scheme-indent-function 1)

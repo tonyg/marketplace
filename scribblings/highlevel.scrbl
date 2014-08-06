@@ -4,9 +4,7 @@
 
 @title[#:tag "high-level-interface"]{High-level interface}
 
-@declare-exporting[#:use-sources (marketplace/sugar-values
-				  marketplace/sugar-untyped
-				  marketplace/sugar-typed)]
+@declare-exporting[#:use-sources (marketplace/sugar)]
 
 This high-level interface between a VM and a process is analogous to
 the @emph{C library interface} of a Unix-like operating system. The
@@ -60,11 +58,8 @@ and @racket[ground-vm:] explicitly.
 
 @section{Using Marketplace as a library}
 
-@defmodule*[(marketplace/sugar-untyped
-	     marketplace/sugar-typed)
-	    #:use-sources (marketplace/sugar-values
-			   marketplace/sugar-untyped
-			   marketplace/sugar-typed)]
+@defmodule*[(marketplace/sugar)
+	    #:use-sources (marketplace/sugar)]
 
 Instead of using Racket's @tt{#lang} feature, ordinary Racket programs
 can use Marketplace features by requiring Marketplace modules
@@ -110,9 +105,7 @@ its state type).
 @section[#:tag "constructing-transitions"]{Constructing transitions}
 
 @declare-exporting[#:use-sources (marketplace
-				  marketplace/sugar-values
-				  marketplace/sugar-untyped
-				  marketplace/sugar-typed)]
+				  marketplace/sugar)]
 
 @deftogether[(
 @defform[(transition new-state action-tree ...)]

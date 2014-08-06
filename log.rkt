@@ -7,7 +7,6 @@
 
 (define marketplace-root-logger (make-logger 'marketplace #f))
 
-;; WARNING: duplicated in log-typed.rkt
 (define-syntax marketplace-log
   (syntax-rules ()
     [(_ level-exp message)

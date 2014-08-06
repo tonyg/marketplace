@@ -12,21 +12,7 @@
 	 (for-label typed/racket/base))
 
 (require (for-label (only-in marketplace/drivers/tcp-bare tcp)
-		    (except-in marketplace/sugar-untyped
-			       name-endpoint
-			       name-process
-			       transition/no-state)
-		    (except-in marketplace/sugar-typed
-			       ?
-			       let-fresh
-			       match-state
-			       match-orientation
-			       match-conversation
-			       match-interest-type
-			       match-reason
-			       on-presence
-			       on-absence
-			       on-message)))
+		    marketplace/sugar))
 
 ;; TODO: make it display "=" instead of ":" connecting the defined
 ;; type to the definition.

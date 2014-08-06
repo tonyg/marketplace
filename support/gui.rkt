@@ -19,7 +19,7 @@
 
 (require racket/pretty)
 
-(require (prefix-in core: "../types.rkt")
+(require (prefix-in core: "../structs.rkt")
 	 (prefix-in core: "../vm.rkt"))
 
 (provide open-debugger)
