@@ -47,19 +47,19 @@ This repository contains a [Racket](http://racket-lang.org/) package,
 
 ## Compiling and running the code
 
-You will need Racket version 5.90.x or later.
+You will need Racket version 6.1.x or later.
 
 Once you have Racket installed, run
 
+    raco pkg install marketplace
+
+to install the package from the Racket package repository, or
+
     raco pkg install --link `pwd`
 
-from the root directory of the Git checkout to install the package in
-your Racket system. (Alternatively, `make link` does the same thing.)
+from the root directory of the Git checkout to install the package
+from a local snapshot. (Alternatively, `make link` does the same thing.)
 This will make `#lang marketplace` available to programs.
-
-It will take several minutes to compile the code. On my Macbook Air,
-it takes around 10 minutes; on my ridiculously fast desktop machine,
-it still takes around 2 minutes.
 
 At this point, you may load and run any of the example `*.rkt` files
 in the
@@ -76,4 +76,4 @@ so you cannot run both simultaneously.
 
 ## Copyright
 
-Copyright &copy; Tony Garnock-Jones 2010, 2011, 2012, 2013.
+Copyright &copy; Tony Garnock-Jones 2010, 2011, 2012, 2013, 2014.
