@@ -15,7 +15,9 @@
 		    quit))
 (require "support/dsl-untyped.rkt")
 
-(provide transition
+(provide (all-from-out "main.rkt")
+
+	 transition
 	 delete-endpoint
 	 send-message
 	 send-feedback
