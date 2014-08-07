@@ -55,20 +55,9 @@
 	 [name name]
 	 [from-vm to-debugger]
 	 [to-vm from-debugger]))
-  (wrap/unwrapper
-   (lambda (v)
-     (channel-put to-debugger v)
-     (channel-get from-debugger))))
-
-;; This is utterly vile.
-(define (wrap/unwrapper thunk)
-  (local-require racket/unsafe/ops)
-  (lambda (wrapped-val)
-    ;; (pretty-print `(wrapped-val ,wrapped-val))
-    (define inner (unsafe-struct-ref wrapped-val 0))
-    ;; (pretty-print `(inner ,inner))
-    (unsafe-struct-set! wrapped-val 0 (thunk inner))
-    wrapped-val))
+  (lambda (v)
+    (channel-put to-debugger v)
+    (channel-get from-debugger)))
 
 (define sane-tab-panel%
   (class tab-panel%
