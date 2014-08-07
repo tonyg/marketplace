@@ -70,6 +70,13 @@
 	      (if h-stretch? width min-w)
 	      (if v-stretch? height min-h))))))
 
+(define (string->label-string s)
+  ;; Per documentation for (label-string?), a label string "is a
+  ;; string whose length is less than or equal to 200."
+  (if (> (string-length s) 200)
+      (string-append (substring s 0 196) " ...")
+      s))
+
 (define debugger%
   (class object%
 
@@ -296,7 +303,7 @@
       (send events set-data n current-historical-moment)
       (send events set-string n dir 1)
       (send events set-string n type 2)
-      (send events set-string n (~a detail) 3)
+      (send events set-string n (string->label-string (~a detail)) 3)
       (define current-selection (send events get-selection))
       (when (or (not current-selection) (= current-selection (- n 1)))
 	(send events set-first-visible-item n)
