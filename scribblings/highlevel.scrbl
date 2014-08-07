@@ -15,9 +15,7 @@ interface} of a Unix-like operating system.
 
 @;{
 @defmodulelang*[(marketplace
-		 marketplace/flow-control
-		 marketplace/typed
-		 marketplace/typed/flow-control)]
+		 marketplace/flow-control)]
 }
 
 @defmodulelang[marketplace]
@@ -31,27 +29,18 @@ actions spawn application processes and nested VMs, which in turn
 subscribe to sources of events from the outside world.
 
 At present, there's just @tt{#lang marketplace}. In future, there will
-be a variation for Typed Racket, and languages providing greater
-support for flow control, responsibility transfer, and other
-networking concepts. For now, Typed Racket programs must be written as
-@tt{#lang typed/racket} programs using @racket[(require marketplace)]
-and @racket[ground-vm:] explicitly.
+be languages providing greater support for flow control,
+responsibility transfer, and other networking concepts.
 
 @;{
 @itemlist[
 
-  @item{@racket[marketplace] is for @emph{untyped} programs, and uses
+  @item{@racket[marketplace] is for ordinary Racket programs, and uses
   the @secref{tcp-bare} TCP driver;}
 
   @item{@racket[marketplace/flow-control] is like
   @racket[marketplace], but uses the flow-controlled @secref{tcp}
   driver;}
-
-  @item{@racket[marketplace/typed] is like @racket[marketplace], but
-  for @emph{typed} programs;}
-
-  @item{@racket[marketplace/typed/flow-control] is like
-  @racket[marketplace/flow-control], but for typed programs.}
 
 ]
 }
@@ -65,7 +54,7 @@ Instead of using Racket's @tt{#lang} feature, ordinary Racket programs
 can use Marketplace features by requiring Marketplace modules
 directly.
 
-Such programs need to use @racket[ground-vm]/@racket[ground-vm:] to
+Such programs need to use @racket[ground-vm] to
 start the ground-level VM explicitly. They also need to explicitly
 start any drivers they need; for example, the file
 @filepath{examples/echo-plain.rkt} uses @racket[ground-vm] along with
@@ -78,27 +67,20 @@ start any drivers they need; for example, the file
                (on-presence (spawn (echoer from to))))))
 ]
 
-@deftogether[(
-@defform[(ground-vm maybe-boot-pid-binding maybe-initial-state initial-action ...)]
-@defform[(ground-vm: maybe-boot-pid-binding maybe-typed-initial-state initial-action ...)
+@defform[(ground-vm maybe-boot-pid-binding maybe-initial-state initial-action ...)
 	 #:grammar
 	 [(maybe-boot-pid-binding (code:line)
 	 			  (code:line #:boot-pid id))
 	  (maybe-initial-state (code:line)
 	  		       (code:line #:initial-state expr))
-	  (maybe-typed-initial-state (code:line)
-	  		       	     (code:line #:initial-state expr : type))
-	  (initial-action expr)]]
-)]{
+	  (initial-action expr)]]{
 
-Starts the ground VM, in untyped and typed programs, respectively. If
-@racket[#:boot-pid] is specified, the given identifier is bound within
-the form to the PID of the @emph{primordial process} that performs the
-initial actions. If @racket[#:initial-state] is specified (with a
-type, for @racket[ground-vm:]), it is used as the initial state for
-the primordial process; if it is not supplied, the primordial process
-is given @racket[(void)] as its initial state (and @racket[Void] as
-its state type).
+Starts the ground VM. If @racket[#:boot-pid] is specified, the given
+identifier is bound within the form to the PID of the @emph{primordial
+process} that performs the initial actions. If
+@racket[#:initial-state] is specified, it is used as the initial state
+for the primordial process; if it is not supplied, the primordial
+process is given @racket[(void)] as its initial state.
 
 }
 
@@ -109,32 +91,24 @@ its state type).
 
 @deftogether[(
 @defform[(transition new-state action-tree ...)]
-@defform[(transition: new-state : State action-tree ...)]
 @defform[(transition/no-state action-tree ...)]
 )]{
 
-Each of these forms produces a @racket[Transition] structure. The
-first is for untyped code, the second for typed code (where the
-mandatory @racket[State] is the type of the transitioning process's
-private state), and the third for either.
+Each of these forms produces a @racket[transition] structure.
 
-Each @racket[action-tree] must be an @racket[(ActionTree State)].
-
-It's fine to include @emph{no} action-trees, in which case the
+Each @racket[action-tree] must be an @tech{action tree}.
+It's fine to include @emph{no} action trees, in which case the
 transition merely updates the state of the process without taking any
 actions.
 
-In the case of @racket[transition/no-state], the type @racket[Void]
-and value @racket[(void)] is used for the process state.
-@racket[transition/no-state] is useful for processes that are
-stateless other than the implicit state of their endpoints.
+In the case of @racket[transition/no-state], the value @racket[(void)]
+is used for the process state. @racket[transition/no-state] is useful
+for processes that are stateless other than the implicit state of
+their endpoints.
 
 }
 
-@deftogether[(
-@defstruct*[transition ([state State] [actions (ActionTree State)]) #:transparent]
-@deftype[(Transition State) (transition State)]
-)]{
+@defstruct*[transition ([state State] [actions action-tree?]) #:transparent]{
 
 A transition structure. The @racket[transition-state] field is the new
 private state the process will have after the transition is applied,
@@ -143,16 +117,23 @@ performed by the VM in order to apply the transition.
 
 }
 
-@deftogether[(
-@deftype[(ActionTree State) (Constreeof (Action State))]
-@deftype[(Constreeof X) (Rec CT (U X (Pairof CT CT) False Void Null))]
-)]{
+@defproc[(action-tree? [value any/c]) boolean?]{
 
-An action-tree is a @deftech{cons-tree} of @racket[Action]s. When
-performing actions, a VM will traverse an action-tree in left-to-right
-order.
+Predicate that recognises an @deftech{action tree}. An action tree is
+either
 
-@racket['()], @racket[(void)], and @racket[#f] may also be present in
+@itemlist[
+	  @item{@racket['()];}
+	  @item{@racket[#f];}
+	  @item{@racket[(void)];}
+	  @item{a pair of action trees; or}
+	  @item{an @tech{action}.}
+]
+
+When performing actions, a VM will traverse an action-tree in
+left-to-right order.
+
+@racket['()], @racket[(void)], and @racket[#f] may be present in
 action-trees: when the VM reaches such a value, it ignores it and
 continues with the next leaf in the tree.
 
@@ -194,10 +175,9 @@ at all" in a transition:
 
 }
 
-@defproc[(sequence-actions [initial-transition (Transition State)]
-			   [item (U (ActionTree State)
-				    (State -> (Transition State)))]
-			   ...) (Transition State)]{
+@defproc[(sequence-actions [initial-transition transition?]
+			   [item (or/c action-tree? (any/c -> transition?))]
+			   ...) transition?]{
 
 Returns a transition formed from the @racket[initial-transition]
 extended with new actions, possibly updating its carried state. Each
@@ -238,44 +218,30 @@ collection of macros helps streamline endpoint setup.
 
 @deftogether[(
 @defform[(publisher topic handler ...)]
-@defform[(publisher: State topic handler ...)]
 @defform[(subscriber topic handler ...)]
-@defform[(subscriber: State topic handler ...)]
 @defform[(observe-subscribers topic handler ...)]
-@defform[(observe-subscribers: State topic handler ...)]
 @defform[(observe-publishers topic handler ...)]
-@defform[(observe-publishers: State topic handler ...)]
 @defform[(observe-subscribers/everything topic handler ...)]
-@defform[(observe-subscribers/everything: State topic handler ...)]
 @defform[(observe-publishers/everything topic handler ...)]
-@defform[(observe-publishers/everything: State topic handler ...)]
 @defform[(build-endpoint pre-eid role handler ...)]
-@defform[(build-endpoint: State pre-eid role handler ...)]
 )]{
 
 The many variations on the core
-@racket[build-endpoint]/@racket[build-endpoint:] form exist to give
+@racket[build-endpoint] form exist to give
 good control over @racket[InterestType] in the endpoint under
 construction;
 see @secref{participating-vs-observing}.
 
 Almost everything is optional in an endpoint definition. The only
-mandatory part is the topic, unless you're using Typed Racket, in
-which case the process state type must also be specified.
+mandatory part is the topic.
 
 For example, a minimal endpoint subscribing to all messages would be:
 
 @racketblock[(subscriber ?)]
 
-or in Typed Racket, for a process with @racket[Integer] as its process
-state type,
-
-@racketblock[(subscriber: Integer ?)]
-
 A minimal publishing endpoint would be:
 
-@racketblock[(publisher ?)
-	     (publisher: Integer ?)]
+@racketblock[(publisher ?)]
 
 While topic patterns are ordinary Racket data with embedded @racket[?]
 wildcards (see @secref{messages-and-topics}), all the other patterns
@@ -313,7 +279,7 @@ the wrapped handlers are expected to return
 @seclink["constructing-transitions"]{transition structures}.
 
 If not, however, the handler expressions are expected to return plain
-@racket[ActionTree]s.
+@tech{action tree}s.
 
 This way, simple handlers that do not need to examine the process
 state, and simply act in response to whichever event triggered them,
@@ -476,9 +442,8 @@ dynamically:
 
 @itemlist[
 
-  @item{@racket[publisher] and @racket[subscriber] (and typed
-variations ending in @tt{:}) are for ordinary @emph{participation} in
-conversations;}
+  @item{@racket[publisher] and @racket[subscriber] are for ordinary
+@emph{participation} in conversations;}
 
   @item{@racket[observe-subscribers] and @racket[observe-publishers]
 are for @emph{observing} conversations without participating in them; and}
@@ -503,7 +468,7 @@ but as an observer, the code should declare the roles being observed.
 Endpoint names can be used to @seclink["updating-endpoints"]{update}
 or @seclink["deleting-endpoints"]{delete} endpoints.
 
-@defproc[(name-endpoint [id Any] [add-endpoint-action AddEndpoint]) AddEndpoint]{
+@defproc[(name-endpoint [id any/c] [add-endpoint-action AddEndpoint]) AddEndpoint]{
 
 Returns a copy of the passed-in @racket[add-endpoint] action
 structure, with the @racket[id] field set to the passed-in identifying
@@ -565,15 +530,7 @@ Equivalent to @racket[(send-message body 'subscriber)].
 @defform[(spawn maybe-pid-binding boot-expr)]
 @defform[(spawn/continue maybe-pid-binding
 			 #:parent parent-state-pattern k-expr
-			 #:child boot-expr)]
-@defform[#:literals (:)
-         (spawn: maybe-pid-binding
-		 #:parent : ParentStateType
-		 #:child : ChildStateType boot-expr)]
-@defform[#:literals (:)
-         (spawn/continue: maybe-pid-binding
-			  #:parent parent-state-pattern : ParentStateType k-expr
-			  #:child : ChildStateType boot-expr)
+			 #:child boot-expr)
 	 #:grammar
 	 [(maybe-pid-binding (code:line)
 			     (code:line #:pid identifier))
@@ -589,15 +546,11 @@ If @racket[#:pid] is supplied, the associated identifier is bound to
 the child process's PID in both @racket[boot-expr] and the parent's
 @racket[k-expr].
 
-The @racket[spawn/continue] and @racket[spawn/continue:] variations
-include a @racket[k-expr], which will run in the parent process after
-the child process has been created. Note that @racket[k-expr] must
-return a @racket[Transition], since @racket[parent-state-pattern] is
-always supplied for these variations.
-
-In Typed Racket, for type system reasons, @racket[spawn:] and
-@racket[spawn/continue:] require @racket[ParentStateType] to be
-supplied as well as @racket[ChildStateType].
+The @racket[spawn/continue] variation includes a @racket[k-expr],
+which will run in the parent process after the child process has been
+created. Note that @racket[k-expr] must return a @racket[transition],
+since @racket[parent-state-pattern] is always supplied for these
+variations.
 
 }
 
@@ -634,11 +587,7 @@ itself.
 
 @section{Cooperative scheduling}
 
-@deftogether[(
-@defform[(yield state-pattern k-expr)]
-@defform[#:literals (:)
-	 (yield: state-pattern : State k-expr)]
-)]{
+@defform[(yield state-pattern k-expr)]{
 
 Lets other processes in the system run for a step, returning to
 evaluate @racket[k-expr] only after doing a complete round of the
@@ -646,23 +595,16 @@ scheduler.
 
 The state of the yielding process will be matched against
 @racket[state-pattern] when the process is resumed, and
-@racket[k-expr] must evaluate to a @racket[Transition].
+@racket[k-expr] must evaluate to a @racket[transition].
 
 }
 
 @section{Creating nested VMs}
 
-@deftogether[(
 @defform[(spawn-vm maybe-vm-pid-binding maybe-boot-pid-binding
 		   maybe-initial-state
 		   maybe-debug-name
-		   boot-action-expr ...)]
-@defform[#:literals (:)
-	 (spawn-vm: : ParentStateType
-		    maybe-vm-pid-binding maybe-boot-pid-binding
-		    maybe-typed-initial-state
-		    maybe-debug-name
-		    boot-action-expr ...)
+		   boot-action-expr ...)
 	 #:grammar
 	 [(maybe-vm-pid-binding (code:line)
 				(code:line #:vm-pid identifier))
@@ -670,12 +612,9 @@ The state of the yielding process will be matched against
 				  (code:line #:boot-pid identifier))
 	  (maybe-initial-state (code:line)
 			       (code:line #:initial-state expr))
-	  (maybe-typed-initial-state (code:line)
-				     (code:line #:initial-state expr : StateType))
 	  (maybe-debug-name (code:line)
 			    (code:line #:debug-name expr))
-	  (boot-action-expr expr)]]
-)]{
+	  (boot-action-expr expr)]]{
 
 Results in a @racket[spawn] action that starts a nested VM. The
 primordial process in the new VM executes the boot-actions with the
@@ -692,10 +631,7 @@ primordial process in the new VM.
 
 @section{Relaying across layers}
 
-@deftogether[(
-@defform[(at-meta-level: StateType preaction ...)]
-@defproc[(at-meta-level [preaction (PreAction State)] ...) (Action StateType)]
-)]{
+@defproc[(at-meta-level [preaction (PreAction State)] ...) (Action StateType)]{
 
 Each VM gives its processes access to two distinct IPC facilities: the
 @emph{internal} one, provided for the VM's processes to talk amongst
@@ -704,9 +640,9 @@ itself is a process within.
 
 Marketplace's actions can apply to either of those two networks. By
 default, actions apply to the VM of the acting process directly, but
-using @racket[at-meta-level] (or @racket[at-meta-level:] in typed
-code) to wrap an action @emph{level-shifts} the action to make it
-apply at the level of the acting process's VM's container instead.
+using @racket[at-meta-level] to wrap an action @emph{level-shifts} the
+action to make it apply at the level of the acting process's VM's
+container instead.
 
 For example, wrapping an @racket[endpoint] in @racket[at-meta-level]
 adds a subscription to the VM's container's network. Instead of

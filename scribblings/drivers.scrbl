@@ -34,10 +34,9 @@ the subscription at the meta-level as well.
 
 @defmodule[marketplace/drivers/tcp-bare]{
 
-This module is only available for use by untyped Racket processes. It
-is included by default in programs using @tt{#lang marketplace}; see
-@secref{hashlang-variations} for information on other language
-variants.
+This module is included by default in programs using @tt{#lang
+marketplace}; see @secref{hashlang-variations} for information on
+other language variants.
 
 @defproc[(tcp-driver) Spawn]{
 
@@ -57,19 +56,15 @@ A pre-made @racket[spawn] action equivalent to @racket[(tcp-driver)].
 
 @subsection{TCP channels}
 
-@defstruct*[tcp-channel ([source TcpAddress]
-			 [destination TcpAddress]
-			 [subpacket TcpSubPacket]) #:prefab]{
+@defstruct*[tcp-channel ([source (or/c tcp-address? tcp-handle? tcp-listener?)]
+			 [destination (or/c tcp-address? tcp-handle? tcp-listener?)]
+			 [subpacket (or/c eof-object? bytes?)]) #:prefab]{
 
 A TCP channel represents a section of a unidirectional TCP flow
 appearing on our local "subnet" of the full TCP network, complete with
 source, destination and subpacket. Each TCP connection has two such
 flows: one inbound (remote-to-local) bytestream, and one outbound
 (local-to-remote) bytestream.
-
-}
-
-@deftype[TcpSubPacket (or/c eof-object? bytes?)]{
 
 Packets carried by @racket[tcp-channel] structures are either
 end-of-file objects or raw binary data represented as Racket byte
@@ -79,8 +74,6 @@ vectors.
 
 @subsection{TCP addresses}
 
-@deftype[TcpAddress (or/c tcp-address? tcp-handle? tcp-listener?)]{
-
 A TCP address describes one end of a TCP connection. It can be either
 
 @itemlist[
@@ -88,8 +81,6 @@ A TCP address describes one end of a TCP connection. It can be either
   @item{a @racket[tcp-handle], representing a local socket on a kernel-assigned port; or}
   @item{a @racket[tcp-listener], representing a local socket on a user-assigned port.}
 ]
-
-}
 
 @defstruct*[tcp-address ([host string?]
 			 [port (integer-in 0 65535)]) #:prefab]{
@@ -109,7 +100,7 @@ a local name for whichever underlying port number ends up being used.
 The @racket[id] must be chosen carefully: it is scoped to the local
 VM, i.e. shared between processes in that VM, so processes must make
 sure not to accidentally clash in handle ID selection. They are also
-used in TcpChannel to mean a specific @emph{instance} of a TCP
+used in @racket[tcp-channel] to mean a specific @emph{instance} of a TCP
 connection, so if you are likely to want to reconnect individual
 flows, use different values for @racket[id].
 
@@ -203,14 +194,14 @@ where, as for receiving data, the @racket[subpacket] is either
 Not yet documented.
 }
 
-@section{timer (typed and untyped)}
+@section{timer}
 
 For examples of the use of the timer driver, see uses of
 @racket[set-timer] and @racket[timer-expired] in
 @hyperlink["https://github.com/tonyg/marketplace-dns/blob/master/network-query.rkt"]{the
 Marketplace-based DNS resolver}.
 
-@section{udp (typed and untyped)}
+@section{udp}
 
 For examples of the use of the UDP driver, see uses of
 @racket[udp-packet] etc. in

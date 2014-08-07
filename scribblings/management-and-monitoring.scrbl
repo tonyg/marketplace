@@ -28,8 +28,7 @@ each @racket['publisher] message sent to the VM's network.
 
 @section[#:tag "logging"]{logging (MARKETPLACE_LOG)}
 
-@defmodule*[(marketplace/log-untyped
-	     marketplace/log-typed)]{
+@defmodule*[(marketplace/log)]{
 
 @defform[#:kind "environment variable" #:id MARKETPLACE_LOG MARKETPLACE_LOG]{
 

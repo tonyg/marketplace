@@ -82,8 +82,9 @@ actions the process wishes to perform. See @secref{Actions} for the
 possible actions a process can take.
 
 Note that the result of an event handler function is actually a
-@racket[Transition] structure; the actual Typed Racket type of event
-handlers is @racket[TrapK], defined in @secref{handler-functions}.
+@racket[transition] structure containing a new state and a sequence of
+actions, rather than the explicit pair shown in the approximate type
+above. See @secref{handler-functions} for more on handler functions.
 
 @section{What is a VM?}
 

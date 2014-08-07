@@ -20,7 +20,7 @@ interface} of a Unix-like operating system.
 
 Each @deftech{handler function} is always associated with a particular
 @tech{endpoint}, registered with the VM via
-@racket[endpoint]/@racket[endpoint:]/@racket[add-endpoint]. A handler
+@racket[endpoint]/@racket[add-endpoint]. A handler
 function for a given process with state type @racket[State] has type:
 
 @racketblock[(EndpointEvent -> State -> (Transition State))]
