@@ -9,7 +9,8 @@
 	       [opaque Reason reason?])
 
 (provide (all-defined-out)
-	 (all-from-out "quasiqueue.rkt"))
+	 (all-from-out "quasiqueue.rkt")
+         reason?)
 
 ;; This module uses different terminology to os2.rkt. From the paper:
 ;; "A role generalizes traditional notions of advertisement and
