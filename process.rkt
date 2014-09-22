@@ -18,7 +18,7 @@
   (send-to-user* (process-debug-name p) (process-pid p) (e) failure-result enclosed-expr))
 
 (define-syntax-rule (send-to-user* debug-name pid (e) failure-result enclosed-expr)
-  (with-handlers ([exn:fail? (lambda: ([e : Reason])
+  (with-handlers ([reason? (lambda: ([e : Reason])
 			       (if (exn? e)
 				   (marketplace-log 'error "Process ~v(~v):~n~a~n"
 						    debug-name pid (exn-message e))
