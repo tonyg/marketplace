@@ -9,8 +9,6 @@
 (require "action-delete-endpoint.rkt")
 (require "quasiqueue.rkt")
 
-(require (only-in web-server/private/util exn->string))
-
 (provide do-quit)
 
 ;; do-quit : (All (State) PID Reason (process State) vm
@@ -24,7 +22,9 @@
 		     killed-pid
 		     (process-debug-name p)
 		     (if (exn? reason)
-			 (exn->string reason)
+                         (parameterize ([current-error-port (open-output-string)])
+                           ((error-display-handler) (exn-message reason) reason)
+                           (get-output-string (current-error-port)))
 			 (format "~v" reason))))
 
   (if (equal? killed-pid (process-pid p))

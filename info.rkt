@@ -4,8 +4,7 @@
                "data-lib"
                "gui-lib"
                "images-lib"
-               "rackunit-lib"
-               "web-server-lib"))
+               "rackunit-lib"))
 (define build-deps '("scribble-lib"
                      "slideshow-lib"
                      "typed-racket-lib"))
