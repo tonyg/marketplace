@@ -30,19 +30,19 @@ This repository contains a [Racket](http://racket-lang.org/) package,
 `marketplace`, which includes
 
  - the implementation of the `#lang marketplace` language, in the
-   [top directory](https://github.com/tonyg/marketplace/tree/master/).
+   [top directory](https://github.com/tonyg/marketplace/tree/typeless/).
 
  - a TCP echo server example, in
-   [`examples/echo-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/examples/echo-paper.rkt).
+   [`examples/echo-paper.rkt`](https://github.com/tonyg/marketplace/tree/typeless/examples/echo-paper.rkt).
 
  - a TCP chat server example, in
-   [`examples/chat-paper.rkt`](https://github.com/tonyg/marketplace/tree/master/examples/chat-paper.rkt).
+   [`examples/chat-paper.rkt`](https://github.com/tonyg/marketplace/tree/typeless/examples/chat-paper.rkt).
 
  - Haskell, Erlang and Python implementations of the chat server for comparison, in
-   [`examples/chat.hs`](https://github.com/tonyg/marketplace/tree/master/examples/chat.hs),
-   [`chat.erl`](https://github.com/tonyg/marketplace/tree/master/examples/chat.erl),
+   [`examples/chat.hs`](https://github.com/tonyg/marketplace/tree/typeless/examples/chat.hs),
+   [`chat.erl`](https://github.com/tonyg/marketplace/tree/typeless/examples/chat.erl),
    and
-   [`chat.py`](https://github.com/tonyg/marketplace/tree/master/examples/chat.py)
+   [`chat.py`](https://github.com/tonyg/marketplace/tree/typeless/examples/chat.py)
    respectively.
 
 ## Compiling and running the code
@@ -63,7 +63,7 @@ This will make `#lang marketplace` available to programs.
 
 At this point, you may load and run any of the example `*.rkt` files
 in the
-[`examples/`](https://github.com/tonyg/marketplace/tree/master/examples/)
+[`examples/`](https://github.com/tonyg/marketplace/tree/typeless/examples/)
 directory.
 
 Note that both the echo server and chat server examples do not print
